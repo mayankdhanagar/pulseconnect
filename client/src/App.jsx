@@ -349,8 +349,7 @@ function App() {
     }
   }
 
-  // PART 2 CONTINUES HERE
-    useEffect(() => {
+  useEffect(() => {
     if (!token) {
       setUser(null)
       setLoginHistory([])
@@ -1035,6 +1034,18 @@ function App() {
 
           <button
             type="button"
+            className={activeView === 'plans' ? 'active' : ''}
+            style={styles.navButton}
+            onClick={() => {
+              setActiveView('plans')
+              setError('')
+            }}
+          >
+            ◈ Subscription Plans
+          </button>
+
+          <button
+            type="button"
             className={activeView === 'settings' ? 'active' : ''}
             style={styles.navButton}
             onClick={openSettings}
@@ -1054,14 +1065,18 @@ function App() {
                 ? 'Your Profile'
                 : activeView === 'settings'
                   ? 'Settings'
-                  : 'Home Feed'}
+                  : activeView === 'plans'
+                    ? 'Subscription Plans'
+                    : 'Home Feed'}
             </h2>
             <p>
               {activeView === 'profile'
                 ? 'Your account details and recent logins.'
                 : activeView === 'settings'
                   ? 'Manage your PulseConnect experience.'
-                  : 'Your world, in real time.'}
+                  : activeView === 'plans'
+                    ? 'Choose a plan that fits your conversations.'
+                    : 'Your world, in real time.'}
             </p>
           </div>
 
@@ -1089,8 +1104,7 @@ function App() {
             {error}
           </p>
         )}
-
-        {activeView === 'profile' ? (
+                {activeView === 'profile' ? (
           <section style={styles.profileSection}>
             <div style={styles.profileCard}>
               <div style={styles.profileAvatar}>{initial}</div>
@@ -1199,6 +1213,138 @@ function App() {
                   ))}
                 </div>
               )}
+            </div>
+          </section>
+        ) : activeView === 'plans' ? (
+          <section style={styles.profileSection}>
+            <div style={styles.detailsCard}>
+              <h3 style={{ marginTop: 0 }}>Choose your PulseConnect plan</h3>
+              <p style={styles.muted}>
+                Plans are valid for 30 days. Your monthly tweet quota follows
+                the Indian Standard Time calendar month.
+              </p>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+                  gap: 14,
+                  marginTop: 20,
+                }}
+              >
+                {[
+                  {
+                    name: 'Free',
+                    price: '₹0',
+                    quota: '1 tweet / month',
+                    note: 'For getting started',
+                  },
+                  {
+                    name: 'Bronze',
+                    price: '₹100',
+                    quota: '3 tweets / month',
+                    note: 'For casual conversations',
+                  },
+                  {
+                    name: 'Silver',
+                    price: '₹300',
+                    quota: '5 tweets / month',
+                    note: 'For more regular sharing',
+                  },
+                  {
+                    name: 'Gold',
+                    price: '₹1,000',
+                    quota: 'Unlimited tweets',
+                    note: 'For unlimited sharing',
+                  },
+                ].map((plan) => {
+                  const current =
+                    (user.subscription || 'Free') === plan.name
+
+                  return (
+                    <article
+                      key={plan.name}
+                      style={{
+                        border: current
+                          ? '2px solid #5546e8'
+                          : '1px solid #e7eaf1',
+                        borderRadius: 12,
+                        padding: 18,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                        background: '#fff',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        <h4 style={{ margin: 0, fontSize: 18 }}>
+                          {plan.name}
+                        </h4>
+
+                        {current && (
+                          <span
+                            style={{
+                              color: '#5546e8',
+                              fontSize: 12,
+                              fontWeight: 700,
+                            }}
+                          >
+                            CURRENT PLAN
+                          </span>
+                        )}
+                      </div>
+
+                      <div>
+                        <strong style={{ fontSize: 27 }}>
+                          {plan.price}
+                        </strong>
+                        {plan.name !== 'Free' && (
+                          <span style={styles.muted}> / 30 days</span>
+                        )}
+                      </div>
+
+                      <strong>{plan.quota}</strong>
+
+                      <p style={{ ...styles.muted, margin: 0 }}>
+                        {plan.note}
+                      </p>
+
+                      <button
+                        type="button"
+                        disabled
+                        style={{
+                          ...styles.submitButton,
+                          marginTop: 'auto',
+                          opacity: 0.65,
+                          cursor: 'not-allowed',
+                        }}
+                      >
+                        {current
+                          ? 'Current plan'
+                          : 'Payment setup pending'}
+                      </button>
+                    </article>
+                  )
+                })}
+              </div>
+
+              <p
+                style={{
+                  ...styles.muted,
+                  marginTop: 18,
+                  fontSize: 12,
+                }}
+              >
+                Payment checkout is not enabled from this screen yet.
+                No payment has been taken.
+              </p>
             </div>
           </section>
         ) : activeView === 'settings' ? (
