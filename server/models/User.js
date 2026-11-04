@@ -34,6 +34,12 @@ const userSchema = new mongoose.Schema(
       enum: ['Free', 'Bronze', 'Silver', 'Gold'],
       default: 'Free',
     },
+
+    // Tracks the last successful password reset.
+    passwordResetRequestedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 )
