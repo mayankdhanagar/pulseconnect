@@ -1,3 +1,4 @@
+
 const express = require('express')
 const mongoose = require('mongoose')
 const jwt = require('jsonwebtoken')
@@ -6,6 +7,7 @@ const nodemailer = require('nodemailer')
 const multer = require('multer')
 const fs = require('fs')
 const path = require('path')
+const { parseFile } = require('music-metadata')
 
 const User = require('../models/User')
 const AudioTweet = require('../models/AudioTweet')
@@ -109,7 +111,9 @@ const upload = multer({
   fileFilter: (req, file, callback) => {
     if (!allowedAudioTypes.has(file.mimetype)) {
       return callback(
-        new Error('Unsupported audio format. Use WebM, MP3, WAV, M4A or OGG.')
+        new Error(
+          'Unsupported audio format. Use WebM, MP3, WAV, M4A or OGG.'
+        )
       )
     }
 
@@ -244,18 +248,26 @@ router.post(
         })
       }
 
-      const otp = typeof req.body.otp === 'string' ? req.body.otp.trim() : ''
-      const durationSeconds = Number(req.body.durationSeconds)
+      const otp = typeof req.body.otp === 'string'
+        ? req.body.otp.trim()
+        : ''
 
-      if (!/^\d{6}$/.test(otp)) {
+      // Read the actual duration from the uploaded audio file.
+      let durationSeconds
+
+      try {
+        const metadata = await parseFile(req.file.path)
+        durationSeconds = Number(metadata.format.duration)
+      } catch (metadataError) {
         removeUploadedFile(req.file)
 
         return res.status(400).json({
           success: false,
-          message: 'Enter the valid 6-digit email OTP.',
+          message: 'Could not read audio duration. Please upload a valid audio file.',
         })
       }
 
+      // Reject invalid audio duration and files longer than 5 minutes.
       if (
         !Number.isFinite(durationSeconds) ||
         durationSeconds <= 0 ||
@@ -266,6 +278,15 @@ router.post(
         return res.status(400).json({
           success: false,
           message: 'Audio duration cannot exceed 5 minutes.',
+        })
+      }
+
+      if (!/^\d{6}$/.test(otp)) {
+        removeUploadedFile(req.file)
+
+        return res.status(400).json({
+          success: false,
+          message: 'Enter the valid 6-digit email OTP.',
         })
       }
 

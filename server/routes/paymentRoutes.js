@@ -3,7 +3,6 @@ const express = require('express')
 const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
-
 const User = require('../models/User')
 const Payment = require('../models/Payment')
 
@@ -11,18 +10,21 @@ const router = express.Router()
 
 const PLANS = {
   Bronze: {
-    amount: '100.00',
+    amount: 100,
     description: 'PulseConnect Bronze Monthly Subscription',
   },
   Silver: {
-    amount: '300.00',
+    amount: 300,
     description: 'PulseConnect Silver Monthly Subscription',
   },
   Gold: {
-    amount: '1000.00',
+    amount: 1000,
     description: 'PulseConnect Gold Monthly Subscription',
   },
 }
+
+const SUBSCRIPTION_DAYS = 30
+const PROCESSING_TIMEOUT = 5 * 60 * 1000
 
 function sha512(value) {
   return crypto.createHash('sha512').update(value).digest('hex')
@@ -45,21 +47,36 @@ function isValidHash(receivedHash, calculatedHash) {
   )
 }
 
-function isPaymentTimeAllowed() {
+
+// Payment time rule:
+// - Local development + PayU test mode: allow testing at any time.
+// - Production or live PayU mode: allow payments only from 10:00 to 10:59 AM IST.
+function isPaymentTimeAllowed(date = new Date()) {
+  const payUBaseUrl = String(process.env.PAYU_BASE_URL || '')
+  const isLocalPayUTestMode =
+    process.env.NODE_ENV !== 'production' &&
+    payUBaseUrl.includes('test.payu.in')
+
+  if (isLocalPayUTestMode) {
+    return true
+  }
+
   const parts = new Intl.DateTimeFormat('en-IN', {
     timeZone: 'Asia/Kolkata',
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
-  }).formatToParts(new Date())
+  }).formatToParts(date)
 
   const hour = Number(parts.find((part) => part.type === 'hour').value)
 
+  // 10:00 AM inclusive, 11:00 AM exclusive.
   return hour === 10
 }
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization
+
   const token = authHeader?.startsWith('Bearer ')
     ? authHeader.slice(7)
     : null
@@ -96,16 +113,15 @@ function getFrontendUrl() {
 }
 
 function getCallbackUrl() {
-  const callbackUrl = process.env.PAYU_CALLBACK_URL
+  const url = process.env.PAYU_CALLBACK_URL
 
-  if (!callbackUrl || !callbackUrl.startsWith('https://')) {
+  if (!url || !url.startsWith('https://')) {
     throw new Error('A public HTTPS PAYU_CALLBACK_URL is required')
   }
 
-  return callbackUrl.replace(/\/$/, '')
+  return url.replace(/\/$/, '')
 }
 
-// PayU classic Verify Payment API.
 async function verifyPaymentWithPayU(txnid) {
   const key = process.env.PAYU_KEY
   const salt = process.env.PAYU_SALT
@@ -145,13 +161,15 @@ async function verifyPaymentWithPayU(txnid) {
   const data = await response.json()
 
   if (Number(data.status) !== 1) {
-    throw new Error(`PayU verification unsuccessful: ${data.msg || 'Unknown error'}`)
+    throw new Error(
+      `PayU verification unsuccessful: ${data.msg || 'Unknown error'}`
+    )
   }
 
   const transaction = data.transaction_details?.[txnid]
 
   if (!transaction) {
-    throw new Error('Transaction not found in PayU verification response')
+    throw new Error('Transaction not found in PayU response')
   }
 
   return transaction
@@ -178,7 +196,7 @@ async function sendInvoiceEmail(user, payment) {
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to: user.email,
-    subject: 'PulseConnect subscription payment receipt',
+    subject: 'PulseConnect Subscription Invoice',
     text: [
       `Hello ${user.name},`,
       '',
@@ -188,15 +206,18 @@ async function sendInvoiceEmail(user, payment) {
       `Amount: INR ${payment.amount}`,
       `Transaction ID: ${payment.txnid}`,
       `PayU Payment ID: ${payment.payuPaymentId || 'Not available'}`,
-      `Payment date: ${paidDate}`,
-      'Subscription duration: 30 days',
+      `Payment Date: ${paidDate}`,
+      'Subscription Duration: 30 days',
       '',
       'Thank you for using PulseConnect.',
     ].join('\n'),
   })
 }
 
-// Create a hosted PayU checkout session.
+// ==========================================
+// INITIATE PAYMENT
+// ==========================================
+
 router.post('/initiate', authenticateToken, async (req, res) => {
   try {
     if (!process.env.PAYU_KEY || !process.env.PAYU_SALT) {
@@ -247,12 +268,11 @@ router.post('/initiate', authenticateToken, async (req, res) => {
 
     const callbackUrl = getCallbackUrl()
     const selectedPlan = PLANS[plan]
-
     const txnid = `PC${Date.now()}${crypto.randomBytes(4).toString('hex')}`
 
     const firstName = user.name.trim().split(/\s+/)[0].slice(0, 60)
     const productInfo = selectedPlan.description
-    const amount = selectedPlan.amount
+    const amount = selectedPlan.amount.toFixed(2)
 
     const hashString =
       `${process.env.PAYU_KEY}|${txnid}|${amount}|${productInfo}|` +
@@ -264,7 +284,7 @@ router.post('/initiate', authenticateToken, async (req, res) => {
       user: user._id,
       txnid,
       plan,
-      amount,
+      amount: selectedPlan.amount,
       status: 'Pending',
     })
 
@@ -298,8 +318,16 @@ router.post('/initiate', authenticateToken, async (req, res) => {
   }
 })
 
-// Receive PayU's URL-encoded callback and verify it.
+// ==========================================
+// PAYU CALLBACK
+// ==========================================
+
 router.post('/callback', async (req, res) => {
+  console.log('PayU callback received:', {
+    txnid: req.body.txnid,
+    status: req.body.status,
+  })
+
   try {
     const {
       key,
@@ -336,9 +364,12 @@ router.post('/callback', async (req, res) => {
       return res.status(404).send('Payment transaction not found')
     }
 
-    // Prevent sequential duplicate callbacks from extending the plan again.
     if (payment.status === 'Success') {
       return res.redirect(`${getFrontendUrl()}/?payment=success`)
+    }
+
+    if (payment.status === 'Failed') {
+      return res.redirect(`${getFrontendUrl()}/?payment=failed`)
     }
 
     const user = await User.findById(payment.user)
@@ -352,7 +383,7 @@ router.post('/callback', async (req, res) => {
 
     if (
       !expectedPlan ||
-      Number(amount).toFixed(2) !== payment.amount ||
+      Number(amount).toFixed(2) !== Number(payment.amount).toFixed(2) ||
       productinfo !== expectedPlan.description ||
       email?.toLowerCase() !== user.email.toLowerCase() ||
       firstname !== expectedFirstName
@@ -368,9 +399,7 @@ router.post('/callback', async (req, res) => {
     let calculatedHash = sha512(reverseHashString)
 
     if (additionalCharges) {
-      calculatedHash = sha512(
-        `${additionalCharges}|${reverseHashString}`
-      )
+      calculatedHash = sha512(`${additionalCharges}|${reverseHashString}`)
     }
 
     if (!isValidHash(hash, calculatedHash)) {
@@ -378,7 +407,6 @@ router.post('/callback', async (req, res) => {
       return res.status(400).send('Payment response verification failed')
     }
 
-    // A callback alone is not enough. Confirm the transaction directly with PayU.
     const verifiedTransaction = await verifyPaymentWithPayU(txnid)
 
     const verifiedStatus = String(
@@ -386,73 +414,146 @@ router.post('/callback', async (req, res) => {
     ).toLowerCase()
 
     const verifiedAmount = Number(
-      verifiedTransaction.amt ?? verifiedTransaction.transaction_amount
+      verifiedTransaction.amt ??
+      verifiedTransaction.transaction_amount
     )
 
     if (
       verifiedTransaction.txnid !== txnid ||
       !Number.isFinite(verifiedAmount) ||
-      verifiedAmount.toFixed(2) !== payment.amount
+      verifiedAmount.toFixed(2) !== Number(payment.amount).toFixed(2)
     ) {
-      console.error('PayU verification details mismatch:', txnid)
       return res.status(400).send('Verified payment details do not match')
     }
 
-    if (verifiedStatus !== 'success') {
-      if (
-        ['failure', 'failed'].includes(verifiedStatus) ||
-        status.toLowerCase() !== 'success'
-      ) {
-        payment.status = 'Failed'
-        await payment.save()
+    if (verifiedStatus !== 'success' || status.toLowerCase() !== 'success') {
+      if (['failure', 'failed'].includes(verifiedStatus)) {
+        await Payment.updateOne(
+          { txnid, status: 'Pending' },
+          { $set: { status: 'Failed' } }
+        )
 
         return res.redirect(`${getFrontendUrl()}/?payment=failed`)
       }
 
-      // Pending or unknown statuses must not activate a subscription.
       return res.redirect(`${getFrontendUrl()}/?payment=pending`)
     }
 
-    if (status.toLowerCase() !== 'success') {
-      return res.redirect(`${getFrontendUrl()}/?payment=pending`)
-    }
+    // Claim this payment. Only one callback can process it.
+    // A stale Processing payment can be retried after five minutes.
+    const staleTime = new Date(Date.now() - PROCESSING_TIMEOUT)
 
-    // Recheck before applying the subscription.
-    const latestPayment = await Payment.findOne({ txnid })
-
-    if (latestPayment.status === 'Success') {
-      return res.redirect(`${getFrontendUrl()}/?payment=success`)
-    }
-
-    const paidAt = new Date()
-
-    const currentExpiry =
-      user.subscriptionExpiresAt &&
-      user.subscriptionExpiresAt > paidAt
-        ? user.subscriptionExpiresAt
-        : paidAt
-
-    user.subscription = payment.plan
-    user.subscriptionExpiresAt = new Date(
-      currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000
+    const claimedPayment = await Payment.findOneAndUpdate(
+      {
+        txnid,
+        $or: [
+          { status: 'Pending' },
+          {
+            status: 'Processing',
+            processingAt: { $lt: staleTime },
+          },
+          {
+            status: 'Processing',
+            processingAt: null,
+          },
+        ],
+      },
+      {
+        $set: {
+          status: 'Processing',
+          processingAt: new Date(),
+        },
+      },
+      { new: true }
     )
 
-    await user.save()
+    if (!claimedPayment) {
+      const latestPayment = await Payment.findOne({ txnid })
 
-    payment.status = 'Success'
-    payment.payuPaymentId =
-      verifiedTransaction.mihpayid || mihpayid || null
-    payment.paidAt = paidAt
+      if (latestPayment?.status === 'Success') {
+        return res.redirect(`${getFrontendUrl()}/?payment=success`)
+      }
 
-    await payment.save()
+      if (latestPayment?.status === 'Processing') {
+        return res.redirect(`${getFrontendUrl()}/?payment=pending`)
+      }
 
-    try {
-      await sendInvoiceEmail(user, payment)
-    } catch (emailError) {
-      console.error('Invoice email error:', emailError.message)
+      return res.redirect(`${getFrontendUrl()}/?payment=failed`)
     }
 
-    return res.redirect(`${getFrontendUrl()}/?payment=success`)
+    try {
+      const currentUser = await User.findById(claimedPayment.user)
+
+      if (!currentUser) {
+        throw new Error('User not found while activating subscription')
+      }
+
+      const paidAt = new Date()
+
+      const currentExpiry =
+        currentUser.subscriptionExpiresAt &&
+        currentUser.subscriptionExpiresAt > paidAt
+          ? currentUser.subscriptionExpiresAt
+          : paidAt
+
+      currentUser.subscription = claimedPayment.plan
+      currentUser.subscriptionExpiresAt = new Date(
+        currentExpiry.getTime() +
+        SUBSCRIPTION_DAYS * 24 * 60 * 60 * 1000
+      )
+
+      await currentUser.save()
+
+      const completedPayment = await Payment.findOneAndUpdate(
+        {
+          _id: claimedPayment._id,
+          status: 'Processing',
+        },
+        {
+          $set: {
+            status: 'Success',
+            payuPaymentId: verifiedTransaction.mihpayid || mihpayid || null,
+            paidAt,
+            processingAt: null,
+          },
+        },
+        { new: true }
+      )
+
+      if (!completedPayment) {
+        throw new Error('Could not finalize payment record')
+      }
+
+      console.log('Payment and subscription activated:', {
+        txnid,
+        plan: currentUser.subscription,
+        expiresAt: currentUser.subscriptionExpiresAt,
+      })
+
+      try {
+        await sendInvoiceEmail(currentUser, completedPayment)
+        console.log('Invoice email sent:', currentUser.email)
+      } catch (emailError) {
+        console.error('Invoice email error:', emailError.message)
+      }
+
+      return res.redirect(`${getFrontendUrl()}/?payment=success`)
+    } catch (processingError) {
+      console.error('Subscription activation error:', processingError.message)
+
+      // Allow a future verified callback to retry processing.
+      await Payment.updateOne(
+        { _id: claimedPayment._id, status: 'Processing' },
+        {
+          $set: {
+            status: 'Pending',
+            processingAt: null,
+          },
+        }
+      )
+
+      return res.status(500).send('Could not activate subscription')
+    }
   } catch (error) {
     console.error('PayU callback error:', error.message)
 
@@ -460,7 +561,149 @@ router.post('/callback', async (req, res) => {
   }
 })
 
-// Retrieve the logged-in user's payment history.
+// ==========================================
+// DEVELOPMENT MOCK PAYMENT
+// ==========================================
+
+router.post('/mock-success', authenticateToken, async (req, res) => {
+  if (
+    process.env.NODE_ENV === 'production' ||
+    process.env.ENABLE_MOCK_PAYMENTS !== 'true'
+  ) {
+    return res.status(403).json({
+      success: false,
+      message: 'Mock payments are disabled',
+    })
+  }
+
+  try {
+    const { plan } = req.body
+
+    if (!Object.prototype.hasOwnProperty.call(PLANS, plan)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid subscription plan',
+      })
+    }
+
+    const user = await User.findById(req.userId)
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      })
+    }
+
+    const paidAt = new Date()
+    const currentExpiry =
+      user.subscriptionExpiresAt && user.subscriptionExpiresAt > paidAt
+        ? user.subscriptionExpiresAt
+        : paidAt
+
+    const txnid = `MOCK${Date.now()}${crypto.randomBytes(4).toString('hex')}`
+
+    const payment = await Payment.create({
+      user: user._id,
+      txnid,
+      plan,
+      amount: PLANS[plan].amount,
+      status: 'Success',
+      paidAt,
+    })
+
+    user.subscription = plan
+    user.subscriptionExpiresAt = new Date(
+      currentExpiry.getTime() + SUBSCRIPTION_DAYS * 24 * 60 * 60 * 1000
+    )
+
+    await user.save()
+
+    try {
+      await sendInvoiceEmail(user, payment)
+    } catch (emailError) {
+      console.error('Mock invoice email error:', emailError.message)
+    }
+
+    return res.json({
+      success: true,
+      mockPayment: true,
+      message: 'Mock payment successful. No money was charged.',
+      payment: {
+        txnid: payment.txnid,
+        plan: payment.plan,
+        amount: payment.amount,
+        status: payment.status,
+      },
+      subscription: {
+        plan: user.subscription,
+        expiresAt: user.subscriptionExpiresAt,
+      },
+    })
+  } catch (error) {
+    console.error('Mock payment error:', error.message)
+
+    return res.status(500).json({
+      success: false,
+      message: 'Mock payment could not be completed',
+    })
+  }
+})
+
+router.post('/mock-failure', authenticateToken, async (req, res) => {
+  if (
+    process.env.NODE_ENV === 'production' ||
+    process.env.ENABLE_MOCK_PAYMENTS !== 'true'
+  ) {
+    return res.status(403).json({
+      success: false,
+      message: 'Mock payments are disabled',
+    })
+  }
+
+  try {
+    const { plan } = req.body
+
+    if (!Object.prototype.hasOwnProperty.call(PLANS, plan)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid subscription plan',
+      })
+    }
+
+    const payment = await Payment.create({
+      user: req.userId,
+      txnid: `MOCKFAIL${Date.now()}${crypto.randomBytes(4).toString('hex')}`,
+      plan,
+      amount: PLANS[plan].amount,
+      status: 'Failed',
+    })
+
+    return res.json({
+      success: true,
+      mockPayment: true,
+      message: 'Mock payment failed. Subscription was not changed.',
+      payment: {
+        txnid: payment.txnid,
+        plan: payment.plan,
+        amount: payment.amount,
+        status: payment.status,
+      },
+    })
+  } catch (error) {
+    console.error('Mock payment failure error:', error.message)
+
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to create mock failed payment',
+    })
+  }
+})
+
+// ==========================================
+// PAYMENT HISTORY
+// ==========================================
+
 router.get('/history', authenticateToken, async (req, res) => {
   try {
     const payments = await Payment.find({ user: req.userId })

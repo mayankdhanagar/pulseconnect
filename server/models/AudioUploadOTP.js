@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose')
 
 const audioUploadOTPSchema = new mongoose.Schema(
@@ -8,19 +9,24 @@ const audioUploadOTPSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+
     otpHash: {
       type: String,
       required: true,
       select: false,
     },
+
     expiresAt: {
       type: Date,
       required: true,
     },
+
     attempts: {
       type: Number,
       default: 0,
+      min: 0,
     },
+
     createdAt: {
       type: Date,
       default: Date.now,
@@ -28,4 +34,7 @@ const audioUploadOTPSchema = new mongoose.Schema(
   }
 )
 
-module.exports = mongoose.model('AudioUploadOTP', audioUploadOTPSchema)
+module.exports = mongoose.model(
+  'AudioUploadOTP',
+  audioUploadOTPSchema
+)

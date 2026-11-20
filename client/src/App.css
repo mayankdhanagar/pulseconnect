@@ -1,3 +1,4 @@
+
 #root {
   min-height: 100vh;
 }
@@ -45,23 +46,37 @@ textarea {
   color: #6558e8;
 }
 
+/* Sidebar Navigation */
 .sidebar nav {
   display: grid;
   gap: 12px;
 }
 
-.sidebar nav a {
+.sidebar nav button {
+  display: block;
+  width: 100%;
   text-decoration: none;
-  color: #666b7c;
+  color: #4b5563;
+  background: transparent;
+  border: none;
+  text-align: left;
   padding: 13px;
   border-radius: 12px;
   font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-.sidebar nav a:hover,
-.sidebar nav a.active {
-  color: #6558e8;
-  background: #f0efff;
+.sidebar nav button:hover {
+  color: #5546e8 !important;
+  background: #f0efff !important;
+}
+
+.sidebar nav button.active {
+  color: #5546e8 !important;
+  background: #eae8ff !important;
+  font-weight: 700;
 }
 
 .sidebar-footer {
@@ -208,6 +223,7 @@ textarea {
   font-size: 13px;
 }
 
+/* Right Sidebar */
 .rightbar {
   padding: 28px 20px;
 }
@@ -222,6 +238,7 @@ textarea {
 .info-card h3 {
   margin: 0 0 12px;
   font-size: 16px;
+  color: #202437;
 }
 
 .copyright {
@@ -230,6 +247,7 @@ textarea {
   margin-top: 30px;
 }
 
+/* Tablet Responsive */
 @media (max-width: 950px) {
   .app {
     grid-template-columns: 190px minmax(0, 1fr);
@@ -240,6 +258,7 @@ textarea {
   }
 }
 
+/* Mobile Responsive */
 @media (max-width: 600px) {
   .app {
     grid-template-columns: 1fr;
@@ -262,7 +281,8 @@ textarea {
     gap: 4px;
   }
 
-  .sidebar nav a {
+  .sidebar nav button {
+    width: auto;
     padding: 9px;
     font-size: 13px;
   }

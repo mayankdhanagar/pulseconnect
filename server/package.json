@@ -19,6 +19,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.2",
     "multer": "^2.5.0",
+    "music-metadata": "^12.5.0",
     "nodemailer": "^10.1.7"
   },
   "devDependencies": {

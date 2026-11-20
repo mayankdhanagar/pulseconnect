@@ -1,6 +1,26 @@
+# Dependencies
 node_modules/
+
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
+
+# Build files
 dist/
 build/
+
+# Local backups
+PulseConnect_Backup/
+**/*.backup
+*.backup
+
+# Uploaded audio and user files
+server/uploads/
+
+# Local Postman settings
+.postman/
+postman/
+
+# Email testing file
+server/test-email.js

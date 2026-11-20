@@ -22,8 +22,8 @@ app.use(express.json({ limit: '1mb' }))
 app.use(express.urlencoded({ extended: false }))
 app.use('/api/audio', require('./routes/audioRoutes'))
 app.use('/api/payments', require('./routes/paymentRoutes'))
+app.use('/api/language', require('./routes/languageRoutes'))
 
-// Email transporter
 const emailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -32,95 +32,44 @@ const emailTransporter = nodemailer.createTransport({
   },
 })
 
-// Hash OTP before storing it in MongoDB.
 function hashEmailOTP(otp) {
   return crypto.createHash('sha256').update(otp).digest('hex')
 }
 
-// Detect browser using the browser's User-Agent header.
 function getBrowser(userAgent = '') {
   if (!userAgent) return 'Unknown'
-
-  if (/EdgA\/|EdgiOS\/|Edg\//i.test(userAgent)) {
-    return 'Microsoft Edge'
-  }
-
-  if (/OPR\/|OPiOS\/|Opera Mini|Opera Mobi/i.test(userAgent)) {
-    return 'Opera'
-  }
-
-  if (/SamsungBrowser\//i.test(userAgent)) {
-    return 'Samsung Internet'
-  }
-
-  if (/FxiOS\/|Firefox\//i.test(userAgent)) {
-    return 'Mozilla Firefox'
-  }
-
-  if (/CriOS\/|Chrome\//i.test(userAgent)) {
-    return 'Google Chrome'
-  }
-
-  if (/Brave\//i.test(userAgent)) {
-    return 'Brave'
-  }
-
-  if (/Vivaldi\//i.test(userAgent)) {
-    return 'Vivaldi'
-  }
-
-  if (/YaBrowser\//i.test(userAgent)) {
-    return 'Yandex Browser'
-  }
-
-  if (/UCBrowser\//i.test(userAgent)) {
-    return 'UC Browser'
-  }
-
-  if (/Safari\//i.test(userAgent)) {
-    return 'Safari'
-  }
-
+  if (/EdgA\/|EdgiOS\/|Edg\//i.test(userAgent)) return 'Microsoft Edge'
+  if (/OPR\/|OPiOS\/|Opera Mini|Opera Mobi/i.test(userAgent)) return 'Opera'
+  if (/SamsungBrowser\//i.test(userAgent)) return 'Samsung Internet'
+  if (/FxiOS\/|Firefox\//i.test(userAgent)) return 'Mozilla Firefox'
+  if (/CriOS\/|Chrome\//i.test(userAgent)) return 'Google Chrome'
+  if (/Brave\//i.test(userAgent)) return 'Brave'
+  if (/Vivaldi\//i.test(userAgent)) return 'Vivaldi'
+  if (/YaBrowser\//i.test(userAgent)) return 'Yandex Browser'
+  if (/UCBrowser\//i.test(userAgent)) return 'UC Browser'
+  if (/Safari\//i.test(userAgent)) return 'Safari'
   return 'Unknown'
 }
 
-// Detect operating system.
 function getOperatingSystem(userAgent = '') {
   if (!userAgent) return 'Unknown'
-
   if (/Windows/i.test(userAgent)) return 'Windows'
   if (/Android/i.test(userAgent)) return 'Android'
   if (/iPhone|iPad|iPod/i.test(userAgent)) return 'iOS'
   if (/Mac OS X|Macintosh/i.test(userAgent)) return 'macOS'
   if (/Linux/i.test(userAgent)) return 'Linux'
-
   return 'Unknown'
 }
 
-// Estimate device category from User-Agent.
 function getDeviceCategory(userAgent = '') {
   if (!userAgent) return 'Unknown'
-
-  if (/iPad|Tablet/i.test(userAgent)) {
-    return 'Tablet'
-  }
-
-  if (/Android/i.test(userAgent) && !/Mobile/i.test(userAgent)) {
-    return 'Tablet'
-  }
-
-  if (/Mobile|Android|iPhone|iPod|Windows Phone/i.test(userAgent)) {
-    return 'Mobile'
-  }
-
-  if (/Windows|Macintosh|Mac OS X|Linux|X11/i.test(userAgent)) {
-    return 'Desktop/Laptop'
-  }
-
+  if (/iPad|Tablet/i.test(userAgent)) return 'Tablet'
+  if (/Android/i.test(userAgent) && !/Mobile/i.test(userAgent)) return 'Tablet'
+  if (/Mobile|Android|iPhone|iPod|Windows Phone/i.test(userAgent)) return 'Mobile'
+  if (/Windows|Macintosh|Mac OS X|Linux|X11/i.test(userAgent)) return 'Desktop/Laptop'
   return 'Unknown'
 }
 
-// Allow mobile login only between 10 AM and 1 PM IST.
 function isMobileLoginAllowed(date = new Date()) {
   const istTime = new Intl.DateTimeFormat('en-IN', {
     timeZone: 'Asia/Kolkata',
@@ -129,18 +78,12 @@ function isMobileLoginAllowed(date = new Date()) {
     hourCycle: 'h23',
   }).formatToParts(date)
 
-  const hour = Number(
-    istTime.find((part) => part.type === 'hour').value
-  )
-
-  // 10:00 AM inclusive, 1:00 PM exclusive.
+  const hour = Number(istTime.find((part) => part.type === 'hour').value)
   return hour >= 10 && hour < 13
 }
 
-// Record a successful login in MongoDB.
 async function recordLogin(req, userId) {
   const userAgent = req.get('user-agent') || ''
-
   return LoginHistory.create({
     user: userId,
     browser: getBrowser(userAgent),
@@ -151,7 +94,7 @@ async function recordLogin(req, userId) {
   })
 }
 
-// Create a JWT and return the authenticated user.
+// UPDATED: Include mustChangePassword in login response.
 function createLoginResponse(user) {
   const token = jwt.sign(
     { userId: user._id.toString() },
@@ -170,29 +113,22 @@ function createLoginResponse(user) {
       username: user.username,
       email: user.email,
       subscription: user.subscription,
+      mustChangePassword: user.mustChangePassword || false,
     },
   }
 }
 
-// Get the beginning of the current calendar day in Indian Standard Time.
 function getISTDayStart(date = new Date()) {
   const IST_OFFSET_MINUTES = 330
-
-  const istDate = new Date(
-    date.getTime() + IST_OFFSET_MINUTES * 60 * 1000
-  )
-
+  const istDate = new Date(date.getTime() + IST_OFFSET_MINUTES * 60 * 1000)
   const istMidnightUTC = Date.UTC(
     istDate.getUTCFullYear(),
     istDate.getUTCMonth(),
     istDate.getUTCDate()
   )
-
-  return new Date(
-    istMidnightUTC - IST_OFFSET_MINUTES * 60 * 1000
-  )
+  return new Date(istMidnightUTC - IST_OFFSET_MINUTES * 60 * 1000)
 }
-// Monthly tweet limits for each subscription plan.
+
 const TWEET_LIMITS = {
   Free: 1,
   Bronze: 3,
@@ -200,17 +136,13 @@ const TWEET_LIMITS = {
   Gold: Infinity,
 }
 
-// Get current month boundaries according to Indian Standard Time.
 function getISTMonthInfo(date = new Date()) {
   const IST_OFFSET_MINUTES = 330
   const offsetMilliseconds = IST_OFFSET_MINUTES * 60 * 1000
-
   const istDate = new Date(date.getTime() + offsetMilliseconds)
   const year = istDate.getUTCFullYear()
   const month = istDate.getUTCMonth()
-
   const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`
-
   const monthStartUTC = Date.UTC(year, month, 1)
   const nextMonthStartUTC = Date.UTC(year, month + 1, 1)
 
@@ -221,7 +153,6 @@ function getISTMonthInfo(date = new Date()) {
   }
 }
 
-// Initialize monthly usage, including existing posts.
 async function initializeMonthlyUsage(user, monthInfo) {
   let usage = await MonthlyPostUsage.findOne({
     user: user._id,
@@ -250,50 +181,63 @@ async function initializeMonthlyUsage(user, monthInfo) {
         user: user._id,
         monthKey: monthInfo.monthKey,
       })
-
       if (usage) return usage
     }
-
     throw error
   }
 }
 
-// Generate a cryptographically secure password using letters only.
 function generateTemporaryPassword(length = 12) {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
   let password = ''
-
   for (let index = 0; index < length; index += 1) {
     password += alphabet[crypto.randomInt(0, alphabet.length)]
   }
-
   return password
 }
 
-// Home
-app.get('/', (req, res) => {
+// ==========================================
+// Forgot Password - MSG91 Configuration
+// ==========================================
+
+const MSG91_VERIFY_URL =
+  'https://control.msg91.com/api/v5/widget/verifyAccessToken'
+
+const forgotPasswordOtpCooldown = new Map()
+const FORGOT_PASSWORD_OTP_COOLDOWN_MS = 60 * 1000
+
+function normalizeForgotPasswordPhone(phone) {
+  if (!phone) return null
+
+  let digits = String(phone).replace(/\D/g, '')
+
+  if (digits.length === 10) {
+    digits = '91' + digits
+  }
+
+  if (!/^91\d{10}$/.test(digits)) {
+    return null
+  }
+
+  return digits
+}app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'Welcome to PulseConnect API!',
   })
 })
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     message: 'PulseConnect backend is healthy',
     database:
-      mongoose.connection.readyState === 1
-        ? 'connected'
-        : 'disconnected',
+      mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
   })
 })
 
-// Middleware: verify JWT token.
 function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization
-
   const token = authHeader?.startsWith('Bearer ')
     ? authHeader.slice(7)
     : null
@@ -325,7 +269,39 @@ function authenticateToken(req, res, next) {
   }
 }
 
-// Get posts: public feed.
+// NEW: Prevent access until the temporary password is changed.
+async function requirePasswordChanged(req, res, next) {
+  try {
+    const user = await User.findById(req.userId).select(
+      'mustChangePassword'
+    )
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'User account not found',
+      })
+    }
+
+    if (user.mustChangePassword === true) {
+      return res.status(403).json({
+        success: false,
+        mustChangePassword: true,
+        message: 'Please change your temporary password before continuing.',
+      })
+    }
+
+    next()
+  } catch (error) {
+    console.error('Password-change check error:', error.message)
+
+    return res.status(500).json({
+      success: false,
+      message: 'Could not verify account status',
+    })
+  }
+}
+
 app.get('/api/posts', async (req, res) => {
   try {
     const posts = await Post.find().sort({ createdAt: -1 })
@@ -345,290 +321,156 @@ app.get('/api/posts', async (req, res) => {
   }
 })
 
-// Create post: login required, monthly subscription limit enforced.
-app.post('/api/posts', authenticateToken, async (req, res) => {
-  let reservedUsage = false
-  let userId = null
-  let monthKey = null
-
-  try {
-    const { content } = req.body
-
-    if (typeof content !== 'string' || !content.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Post content is required',
-      })
-    }
-
-    if (content.trim().length > 280) {
-      return res.status(400).json({
-        success: false,
-        message: 'Post cannot exceed 280 characters',
-      })
-    }
-
-    const user = await User.findById(req.userId)
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'User account not found',
-      })
-    }
-
-    userId = user._id
-
-    // Expire old paid subscriptions.
-    if (
-      user.subscription !== 'Free' &&
-      user.subscriptionExpiresAt &&
-      user.subscriptionExpiresAt <= new Date()
-    ) {
-      user.subscription = 'Free'
-      user.subscriptionExpiresAt = null
-      await user.save()
-    }
-
-    const plan = user.subscription || 'Free'
-    const limit = TWEET_LIMITS[plan] ?? TWEET_LIMITS.Free
-    const monthInfo = getISTMonthInfo()
-
-    monthKey = monthInfo.monthKey
-
-    await initializeMonthlyUsage(user, monthInfo)
-
-    // Atomically reserve one tweet.
-    const usageFilter = {
-      user: user._id,
-      monthKey,
-    }
-
-    if (Number.isFinite(limit)) {
-      usageFilter.count = { $lt: limit }
-    }
-
-    const updatedUsage = await MonthlyPostUsage.findOneAndUpdate(
-      usageFilter,
-      { $inc: { count: 1 } },
-      { new: true, runValidators: true }
-    )
-
-    if (!updatedUsage) {
-      const currentUsage = await MonthlyPostUsage.findOne({
-        user: user._id,
-        monthKey,
-      })
-
-      return res.status(403).json({
-        success: false,
-        message: `You have reached your ${plan} plan limit of ${limit} tweets this month.`,
-        plan,
-        limit: Number.isFinite(limit) ? limit : null,
-        used: currentUsage?.count ?? limit,
-      })
-    }
-
-    reservedUsage = true
-
-    let post
+// UPDATED: Added requirePasswordChanged middleware.
+app.post(
+  '/api/posts',
+  authenticateToken,
+  requirePasswordChanged,
+  async (req, res) => {
+    let reservedUsage = false
+    let userId = null
+    let monthKey = null
 
     try {
-      post = await Post.create({
-        user: user._id,
-        author: user.name,
-        username: `@${user.username}`,
-        content: content.trim(),
-      })
-    } catch (postError) {
-      await MonthlyPostUsage.updateOne(
-        { user: user._id, monthKey, count: { $gt: 0 } },
-        { $inc: { count: -1 } }
-      )
+      const { content } = req.body
 
-      reservedUsage = false
-      throw postError
-    }
-
-    return res.status(201).json({
-      success: true,
-      post,
-      usage: {
-        plan,
-        used: updatedUsage.count,
-        limit: Number.isFinite(limit) ? limit : null,
-      },
-    })
-  } catch (error) {
-    if (reservedUsage && userId && monthKey) {
-      try {
-        await MonthlyPostUsage.updateOne(
-          { user: userId, monthKey, count: { $gt: 0 } },
-          { $inc: { count: -1 } }
-        )
-      } catch (refundError) {
-        console.error('Tweet usage refund error:', refundError.message)
+      if (typeof content !== 'string' || !content.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Post content is required',
+        })
       }
-    }
 
-    console.error('Create post error:', error.message)
+      if (content.trim().length > 280) {
+        return res.status(400).json({
+          success: false,
+          message: 'Post cannot exceed 280 characters',
+        })
+      }
 
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to create post',
-    })
-  }
-})
+      const user = await User.findById(req.userId)
 
-// Create post: login required, monthly subscription limit enforced.
-app.post('/api/posts', authenticateToken, async (req, res) => {
-  let reservedUsage = false
-  let userId = null
-  let monthKey = null
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'User account not found',
+        })
+      }
 
-  try {
-    const { content } = req.body
+      userId = user._id
 
-    if (typeof content !== 'string' || !content.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Post content is required',
-      })
-    }
+      if (
+        user.subscription !== 'Free' &&
+        user.subscriptionExpiresAt &&
+        user.subscriptionExpiresAt <= new Date()
+      ) {
+        user.subscription = 'Free'
+        user.subscriptionExpiresAt = null
+        await user.save()
+      }
 
-    if (content.trim().length > 280) {
-      return res.status(400).json({
-        success: false,
-        message: 'Post cannot exceed 280 characters',
-      })
-    }
+      const plan = user.subscription || 'Free'
+      const limit = TWEET_LIMITS[plan] ?? TWEET_LIMITS.Free
+      const monthInfo = getISTMonthInfo()
+      monthKey = monthInfo.monthKey
 
-    const user = await User.findById(req.userId)
+      await initializeMonthlyUsage(user, monthInfo)
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'User account not found',
-      })
-    }
-
-    userId = user._id
-
-    // Expire old paid subscriptions.
-    if (
-      user.subscription !== 'Free' &&
-      user.subscriptionExpiresAt &&
-      user.subscriptionExpiresAt <= new Date()
-    ) {
-      user.subscription = 'Free'
-      user.subscriptionExpiresAt = null
-      await user.save()
-    }
-
-    const plan = user.subscription || 'Free'
-    const limit = TWEET_LIMITS[plan] ?? TWEET_LIMITS.Free
-    const monthInfo = getISTMonthInfo()
-
-    monthKey = monthInfo.monthKey
-
-    await initializeMonthlyUsage(user, monthInfo)
-
-    // Atomically reserve one tweet.
-    const usageFilter = {
-      user: user._id,
-      monthKey,
-    }
-
-    if (Number.isFinite(limit)) {
-      usageFilter.count = { $lt: limit }
-    }
-
-    const updatedUsage = await MonthlyPostUsage.findOneAndUpdate(
-      usageFilter,
-      { $inc: { count: 1 } },
-      { new: true, runValidators: true }
-    )
-
-    if (!updatedUsage) {
-      const currentUsage = await MonthlyPostUsage.findOne({
+      const usageFilter = {
         user: user._id,
         monthKey,
-      })
+      }
 
-      return res.status(403).json({
-        success: false,
-        message: `You have reached your ${plan} plan limit of ${limit} tweets this month.`,
-        plan,
-        limit: Number.isFinite(limit) ? limit : null,
-        used: currentUsage?.count ?? limit,
-      })
-    }
+      if (Number.isFinite(limit)) {
+        usageFilter.count = { $lt: limit }
+      }
 
-    reservedUsage = true
-
-    let post
-
-    try {
-      post = await Post.create({
-        user: user._id,
-        author: user.name,
-        username: `@${user.username}`,
-        content: content.trim(),
-      })
-    } catch (postError) {
-      await MonthlyPostUsage.updateOne(
-        { user: user._id, monthKey, count: { $gt: 0 } },
-        { $inc: { count: -1 } }
+      const updatedUsage = await MonthlyPostUsage.findOneAndUpdate(
+        usageFilter,
+        { $inc: { count: 1 } },
+        { new: true, runValidators: true }
       )
 
-      reservedUsage = false
-      throw postError
-    }
+      if (!updatedUsage) {
+        const currentUsage = await MonthlyPostUsage.findOne({
+          user: user._id,
+          monthKey,
+        })
 
-    return res.status(201).json({
-      success: true,
-      post,
-      usage: {
-        plan,
-        used: updatedUsage.count,
-        limit: Number.isFinite(limit) ? limit : null,
-      },
-    })
-  } catch (error) {
-    if (reservedUsage && userId && monthKey) {
+        return res.status(403).json({
+          success: false,
+          message: `You have reached your ${plan} plan limit of ${limit} tweets this month.`,
+          plan,
+          limit: Number.isFinite(limit) ? limit : null,
+          used: currentUsage?.count ?? limit,
+        })
+      }
+
+      reservedUsage = true
+      let post
+
       try {
+        post = await Post.create({
+          user: user._id,
+          author: user.name,
+          username: `@${user.username}`,
+          content: content.trim(),
+        })
+      } catch (postError) {
         await MonthlyPostUsage.updateOne(
-          { user: userId, monthKey, count: { $gt: 0 } },
+          { user: user._id, monthKey, count: { $gt: 0 } },
           { $inc: { count: -1 } }
         )
-      } catch (refundError) {
-        console.error('Tweet usage refund error:', refundError.message)
+
+        reservedUsage = false
+        throw postError
       }
+
+      return res.status(201).json({
+        success: true,
+        post,
+        usage: {
+          plan,
+          used: updatedUsage.count,
+          limit: Number.isFinite(limit) ? limit : null,
+        },
+      })
+    } catch (error) {
+      if (reservedUsage && userId && monthKey) {
+        try {
+          await MonthlyPostUsage.updateOne(
+            { user: userId, monthKey, count: { $gt: 0 } },
+            { $inc: { count: -1 } }
+          )
+        } catch (refundError) {
+          console.error('Tweet usage refund error:', refundError.message)
+        }
+      }
+
+      console.error('Create post error:', error.message)
+
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create post',
+      })
     }
-
-    console.error('Create post error:', error.message)
-
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to create post',
-    })
   }
-})
-
-// Register
+)
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, username, email, password } = req.body
+    const { name, username, email, password, phone } = req.body
 
     if (
       typeof name !== 'string' ||
       typeof username !== 'string' ||
       typeof email !== 'string' ||
       typeof password !== 'string' ||
+      typeof phone !== 'string' ||
       !name.trim() ||
       !username.trim() ||
       !email.trim() ||
-      !password
+      !password ||
+      !phone.trim()
     ) {
       return res.status(400).json({
         success: false,
@@ -639,6 +481,7 @@ app.post('/api/auth/register', async (req, res) => {
     const cleanName = name.trim()
     const cleanUsername = username.trim().toLowerCase()
     const cleanEmail = email.trim().toLowerCase()
+    const cleanPhone = phone.trim()
 
     if (
       cleanName.length > 50 ||
@@ -646,7 +489,8 @@ app.post('/api/auth/register', async (req, res) => {
       password.length < 8 ||
       Buffer.byteLength(password, 'utf8') > 72 ||
       !/^[a-zA-Z0-9_]+$/.test(cleanUsername) ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) ||
+      !/^\+?[1-9]\d{9,14}$/.test(cleanPhone)
     ) {
       return res.status(400).json({
         success: false,
@@ -655,13 +499,17 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     const existingUser = await User.findOne({
-      $or: [{ email: cleanEmail }, { username: cleanUsername }],
+      $or: [
+        { email: cleanEmail },
+        { username: cleanUsername },
+        { phone: cleanPhone },
+      ],
     })
 
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        message: 'Email or username is already registered',
+        message: 'Email, username or phone number is already registered',
       })
     }
 
@@ -671,6 +519,9 @@ app.post('/api/auth/register', async (req, res) => {
       name: cleanName,
       username: cleanUsername,
       email: cleanEmail,
+      phone: cleanPhone,
+      phoneVerified: false,
+      preferredLanguage: 'English',
       password: hashedPassword,
     })
 
@@ -682,6 +533,9 @@ app.post('/api/auth/register', async (req, res) => {
         name: user.name,
         username: user.username,
         email: user.email,
+        phone: user.phone,
+        phoneVerified: user.phoneVerified,
+        preferredLanguage: user.preferredLanguage,
         subscription: user.subscription,
       },
     })
@@ -689,7 +543,7 @@ app.post('/api/auth/register', async (req, res) => {
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
-        message: 'Email or username is already registered',
+        message: 'Email, username or phone number is already registered',
       })
     }
 
@@ -702,7 +556,6 @@ app.post('/api/auth/register', async (req, res) => {
   }
 })
 
-// Login: Chrome requires email OTP; other browsers log in directly.
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { identifier, password } = req.body
@@ -735,21 +588,18 @@ app.post('/api/auth/login', async (req, res) => {
     const userAgent = req.get('user-agent') || ''
     const deviceCategory = getDeviceCategory(userAgent)
 
-    // Mobile users can log in only between 10 AM and 1 PM IST.
     if (
       deviceCategory === 'Mobile' &&
       !isMobileLoginAllowed()
     ) {
       return res.status(403).json({
         success: false,
-        message:
-          'Mobile login is allowed only between 10:00 AM and 1:00 PM IST.',
+        message: 'Mobile login is allowed only between 10:00 AM and 1:00 PM IST.',
       })
     }
 
     const browser = getBrowser(userAgent)
 
-    // Chrome login requires email OTP verification.
     if (browser === 'Google Chrome') {
       if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
         return res.status(503).json({
@@ -758,7 +608,6 @@ app.post('/api/auth/login', async (req, res) => {
         })
       }
 
-      // Allow one OTP request every 60 seconds.
       const recentRequest = await LoginOTP.findOne({
         user: user._id,
         createdAt: { $gt: new Date(Date.now() - 60 * 1000) },
@@ -817,11 +666,8 @@ app.post('/api/auth/login', async (req, res) => {
       })
     }
 
-    // Non-Chrome browsers, including Microsoft Edge, log in directly.
     const response = createLoginResponse(user)
 
-    // Save history only after credentials are verified.
-    // A history failure should not prevent login.
     try {
       await recordLogin(req, user._id)
     } catch (historyError) {
@@ -839,7 +685,6 @@ app.post('/api/auth/login', async (req, res) => {
   }
 })
 
-// Verify Chrome login OTP and issue JWT only after successful verification.
 app.post('/api/auth/login/verify-otp', async (req, res) => {
   try {
     const { identifier, otp } = req.body
@@ -872,7 +717,6 @@ app.post('/api/auth/login/verify-otp', async (req, res) => {
     const userAgent = req.get('user-agent') || ''
     const deviceCategory = getDeviceCategory(userAgent)
 
-    // Recheck the time when the user verifies the OTP.
     if (
       deviceCategory === 'Mobile' &&
       !isMobileLoginAllowed()
@@ -881,8 +725,7 @@ app.post('/api/auth/login/verify-otp', async (req, res) => {
 
       return res.status(403).json({
         success: false,
-        message:
-          'Mobile login is allowed only between 10:00 AM and 1:00 PM IST.',
+        message: 'Mobile login is allowed only between 10:00 AM and 1:00 PM IST.',
       })
     }
 
@@ -927,6 +770,7 @@ app.post('/api/auth/login/verify-otp', async (req, res) => {
 
     if (!matches) {
       challenge.attempts += 1
+
       const attemptsLeft = Math.max(0, 5 - challenge.attempts)
 
       if (attemptsLeft === 0) {
@@ -944,12 +788,10 @@ app.post('/api/auth/login/verify-otp', async (req, res) => {
       })
     }
 
-    // OTP is correct: consume the challenge before issuing the token.
     await LoginOTP.deleteMany({ user: user._id })
 
     const response = createLoginResponse(user)
 
-    // Record login only after OTP verification succeeds.
     try {
       await recordLogin(req, user._id)
     } catch (historyError) {
@@ -967,11 +809,11 @@ app.post('/api/auth/login/verify-otp', async (req, res) => {
   }
 })
 
-// Get current user's profile and last 10 login records.
+// UPDATED: Return mustChangePassword in the profile response.
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select(
-      'name username email subscription createdAt'
+      'name username email phone phoneVerified subscription subscriptionExpiresAt notificationsEnabled createdAt mustChangePassword'
     )
 
     if (!user) {
@@ -996,8 +838,13 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
         name: user.name,
         username: user.username,
         email: user.email,
+        phone: user.phone || '',
+        phoneVerified: user.phoneVerified,
         subscription: user.subscription,
+        subscriptionExpiresAt: user.subscriptionExpiresAt,
+        notificationsEnabled: user.notificationsEnabled,
         createdAt: user.createdAt,
+        mustChangePassword: user.mustChangePassword || false,
       },
       loginHistory,
     })
@@ -1011,11 +858,599 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   }
 })
 
-// Forgot Password API.
+// NEW: Change the temporary password.
+app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body
+
+    if (
+      typeof currentPassword !== 'string' ||
+      typeof newPassword !== 'string' ||
+      !currentPassword ||
+      !newPassword
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required.',
+      })
+    }
+
+    if (
+      newPassword.length < 8 ||
+      Buffer.byteLength(newPassword, 'utf8') > 72
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 8 characters and no more than 72 bytes.',
+      })
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be different from your temporary password.',
+      })
+    }
+
+    const user = await User.findById(req.userId).select('+password')
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User account not found.',
+      })
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      currentPassword,
+      user.password
+    )
+
+    if (!passwordMatches) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect.',
+      })
+    }
+
+    user.password = await bcrypt.hash(newPassword, 12)
+    user.mustChangePassword = false
+
+    await user.save()
+
+    return res.json({
+      success: true,
+      message: 'Password changed successfully. You can now use PulseConnect.',
+      user: {
+        id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        subscription: user.subscription,
+        mustChangePassword: false,
+      },
+    })
+  } catch (error) {
+    console.error('Change password error:', error.message)
+
+    return res.status(500).json({
+      success: false,
+      message: 'Could not change password. Please try again.',
+    })
+  }
+})// ==========================================
+// Notification Preferences
+// ==========================================
+
+app.get(
+  '/api/notifications/preferences',
+  authenticateToken,
+  requirePasswordChanged,
+  async (req, res) => {
+    try {
+      const user = await User.findById(req.userId).select(
+        'notificationsEnabled'
+      )
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        })
+      }
+
+      return res.json({
+        success: true,
+        notificationsEnabled: user.notificationsEnabled,
+      })
+    } catch (error) {
+      console.error('Get notification preference error:', error.message)
+
+      return res.status(500).json({
+        success: false,
+        message: 'Could not retrieve notification preference',
+      })
+    }
+  }
+)
+
+app.put(
+  '/api/notifications/preferences',
+  authenticateToken,
+  requirePasswordChanged,
+  async (req, res) => {
+    try {
+      const { enabled } = req.body
+
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          message: 'Notification setting must be true or false',
+        })
+      }
+
+      const user = await User.findByIdAndUpdate(
+        req.userId,
+        { $set: { notificationsEnabled: enabled } },
+        { new: true, runValidators: true }
+      ).select('notificationsEnabled')
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        })
+      }
+
+      return res.json({
+        success: true,
+        message: 'Notification preference updated successfully',
+        notificationsEnabled: user.notificationsEnabled,
+      })
+    } catch (error) {
+      console.error('Update notification preference error:', error.message)
+
+      return res.status(500).json({
+        success: false,
+        message: 'Could not update notification preference',
+      })
+    }
+  }
+)
+
+// ==========================================
+// Verify MSG91 Mobile Token
+// ==========================================
+
+app.post(
+  '/api/auth/forgot-password/verify-mobile-token',
+  async (req, res) => {
+    try {
+      const { accessToken } = req.body
+
+      if (
+        typeof accessToken !== 'string' ||
+        accessToken.length < 20
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid MSG91 verification token',
+        })
+      }
+
+      if (!process.env.MSG91_AUTH_KEY) {
+        return res.status(503).json({
+          success: false,
+          message: 'MSG91 service is not configured on the server',
+        })
+      }
+
+      const msg91Response = await fetch(MSG91_VERIFY_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          authkey: process.env.MSG91_AUTH_KEY,
+          'access-token': accessToken,
+        }),
+      })
+
+      const verificationData = await msg91Response.json()
+
+      if (
+        !msg91Response.ok ||
+        verificationData.type !== 'success'
+      ) {
+        return res.status(401).json({
+          success: false,
+          message: 'Mobile OTP verification failed. Please try again.',
+        })
+      }
+
+      const verifiedPhone = normalizeForgotPasswordPhone(
+        verificationData.message
+      )
+
+      if (!verifiedPhone) {
+        return res.status(401).json({
+          success: false,
+          message: 'MSG91 returned an invalid mobile number.',
+        })
+      }
+
+      const tenDigitPhone = verifiedPhone.slice(2)
+
+      const phoneVariants = [
+        verifiedPhone,
+        `+${verifiedPhone}`,
+        tenDigitPhone,
+        `+91${tenDigitPhone}`,
+      ]
+
+      const user = await User.findOne({
+        phone: { $in: phoneVariants },
+        phoneVerified: true,
+      })
+
+      if (!user) {
+        return res.status(403).json({
+          success: false,
+          message:
+            'Verified mobile number does not match a registered account.',
+        })
+      }
+
+      return res.json({
+        success: true,
+        message: 'Mobile number verified successfully.',
+        resetToken: jwt.sign(
+          {
+            userId: user._id.toString(),
+            purpose: 'forgot-password',
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: '5m' }
+        ),
+      })
+    } catch (error) {
+      console.error(
+        'Forgot-password mobile verification error:',
+        error.message
+      )
+
+      return res.status(500).json({
+        success: false,
+        message: 'Could not verify mobile OTP. Please try again.',
+      })
+    }
+  }
+)
+
+// ==========================================
+// Reset Password After Mobile OTP Verification
+// ==========================================
+
+app.post(
+  '/api/auth/forgot-password/reset-with-mobile',
+  async (req, res) => {
+    let userId = null
+    let previousPasswordHash = null
+    let previousResetTimestamp = null
+    let previousMustChangePassword = false
+    let resetTimestamp = null
+    let temporaryPasswordHash = null
+
+    try {
+      const { resetToken } = req.body
+
+      if (typeof resetToken !== 'string' || !resetToken) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mobile verification is required.',
+        })
+      }
+
+      let decoded
+
+      try {
+        decoded = jwt.verify(resetToken, process.env.JWT_SECRET)
+      } catch {
+        return res.status(401).json({
+          success: false,
+          message: 'Mobile verification expired. Please verify again.',
+        })
+      }
+
+      if (
+        decoded.purpose !== 'forgot-password' ||
+        !decoded.userId
+      ) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid password reset verification.',
+        })
+      }
+
+      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        return res.status(503).json({
+          success: false,
+          message: 'Email service is not configured.',
+        })
+      }
+
+      const user = await User.findById(decoded.userId).select('+password')
+
+      if (!user || user.phoneVerified !== true || !user.email) {
+        return res.status(404).json({
+          success: false,
+          message: 'User account could not be verified.',
+        })
+      }
+
+      userId = user._id
+      previousPasswordHash = user.password
+      previousResetTimestamp = user.passwordResetRequestedAt || null
+      previousMustChangePassword = user.mustChangePassword || false
+
+      const now = new Date()
+      const istDayStart = getISTDayStart(now)
+
+      // Reserve the one-reset-per-day limit atomically.
+      const reservedUser = await User.findOneAndUpdate(
+        {
+          _id: userId,
+          $or: [
+            { passwordResetRequestedAt: null },
+            { passwordResetRequestedAt: { $exists: false } },
+            { passwordResetRequestedAt: { $lt: istDayStart } },
+          ],
+        },
+        { $set: { passwordResetRequestedAt: now } },
+        { new: true }
+      )
+
+      if (!reservedUser) {
+        return res.status(429).json({
+          success: false,
+          message: 'You can use this option only one time per day.',
+        })
+      }
+
+      resetTimestamp = now
+
+      const temporaryPassword = generateTemporaryPassword(12)
+      temporaryPasswordHash = await bcrypt.hash(temporaryPassword, 12)
+
+      // IMPORTANT: Set mustChangePassword to true.
+      const passwordUpdate = await User.updateOne(
+        {
+          _id: userId,
+          passwordResetRequestedAt: resetTimestamp,
+        },
+        {
+          $set: {
+            password: temporaryPasswordHash,
+            mustChangePassword: true,
+          },
+        }
+      )
+
+      if (passwordUpdate.modifiedCount !== 1) {
+        throw new Error('Could not update the temporary password')
+      }
+
+      try {
+        await emailTransporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: user.email,
+          subject: 'Your PulseConnect temporary password',
+          text: [
+            `Hello ${user.name},`,
+            '',
+            'Your PulseConnect password reset request was successful.',
+            `Your temporary password is: ${temporaryPassword}`,
+            '',
+            'Please log in and change this temporary password as soon as possible.',
+            'If you did not request this reset, contact PulseConnect support.',
+          ].join('\n'),
+        })
+      } catch (mailError) {
+        const rollbackUpdate = {
+          $set: {
+            password: previousPasswordHash,
+            mustChangePassword: previousMustChangePassword,
+          },
+        }
+
+        if (previousResetTimestamp) {
+          rollbackUpdate.$set.passwordResetRequestedAt =
+            previousResetTimestamp
+        } else {
+          rollbackUpdate.$unset = {
+            passwordResetRequestedAt: 1,
+          }
+        }
+
+        await User.updateOne(
+          {
+            _id: userId,
+            password: temporaryPasswordHash,
+            passwordResetRequestedAt: resetTimestamp,
+          },
+          rollbackUpdate
+        )
+
+        console.error(
+          'Forgot-password email delivery failed:',
+          mailError.message
+        )
+
+        return res.status(502).json({
+          success: false,
+          message:
+            'Could not send the reset email. Your previous password remains unchanged. Please try again later.',
+        })
+      }
+
+      return res.json({
+        success: true,
+        message:
+          'A temporary password has been sent to your registered email address.',
+      })
+    } catch (error) {
+      console.error('Mobile password reset error:', error.message)
+
+      if (userId && resetTimestamp && previousPasswordHash) {
+        try {
+          const rollbackFilter = {
+            _id: userId,
+            passwordResetRequestedAt: resetTimestamp,
+          }
+
+          if (temporaryPasswordHash) {
+            rollbackFilter.password = temporaryPasswordHash
+          }
+
+          const rollbackUpdate = {
+            $set: {
+              password: previousPasswordHash,
+              mustChangePassword: previousMustChangePassword,
+            },
+          }
+
+          if (previousResetTimestamp) {
+            rollbackUpdate.$set.passwordResetRequestedAt =
+              previousResetTimestamp
+          } else {
+            rollbackUpdate.$unset = {
+              passwordResetRequestedAt: 1,
+            }
+          }
+
+          await User.updateOne(rollbackFilter, rollbackUpdate)
+        } catch (rollbackError) {
+          console.error(
+            'Mobile password reset rollback error:',
+            rollbackError.message
+          )
+        }
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: 'Could not process the password reset. Please try again.',
+      })
+    }
+  }
+)// ==========================================
+// Request Mobile OTP for Forgot Password
+// ==========================================
+
+app.post(
+  '/api/auth/forgot-password/request-mobile-otp',
+  async (req, res) => {
+    try {
+      const { phone } = req.body
+
+      const identifier = normalizeForgotPasswordPhone(phone)
+
+      if (!identifier) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please enter a valid Indian mobile number',
+        })
+      }
+
+      if (!process.env.MSG91_AUTH_KEY) {
+        return res.status(503).json({
+          success: false,
+          message: 'MSG91 service is not configured on the server',
+        })
+      }
+
+      const tenDigitPhone = identifier.slice(2)
+
+      const phoneVariants = [
+        identifier,
+        `+${identifier}`,
+        tenDigitPhone,
+        `+91${tenDigitPhone}`,
+      ]
+
+      const user = await User.findOne({
+        phone: { $in: phoneVariants },
+        phoneVerified: true,
+      })
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'No account found with this verified mobile number.',
+        })
+      }
+
+      const istDayStart = getISTDayStart(new Date())
+
+      if (
+        user.passwordResetRequestedAt &&
+        user.passwordResetRequestedAt >= istDayStart
+      ) {
+        return res.status(429).json({
+          success: false,
+          message: 'You can use this option only one time per day.',
+        })
+      }
+
+      const now = Date.now()
+      const lastRequest =
+        forgotPasswordOtpCooldown.get(identifier) || 0
+
+      const remainingMs =
+        FORGOT_PASSWORD_OTP_COOLDOWN_MS - (now - lastRequest)
+
+      if (remainingMs > 0) {
+        const retryAfterSeconds = Math.ceil(remainingMs / 1000)
+
+        return res.status(429).json({
+          success: false,
+          message: `Please wait ${retryAfterSeconds} seconds before requesting another OTP.`,
+          retryAfterSeconds,
+        })
+      }
+
+      forgotPasswordOtpCooldown.set(identifier, now)
+
+      return res.json({
+        success: true,
+        message: 'Continue with MSG91 mobile verification',
+        channel: 'sms',
+        identifier,
+      })
+    } catch (error) {
+      console.error(
+        'Forgot-password mobile OTP request error:',
+        error.message
+      )
+
+      return res.status(500).json({
+        success: false,
+        message: 'Could not request mobile verification. Please try again.',
+      })
+    }
+  }
+)
+
+// ==========================================
+// Email Forgot Password
+// ==========================================
+
 app.post('/api/auth/forgot-password', async (req, res) => {
   let userId = null
   let previousPasswordHash = null
   let previousResetTimestamp = null
+  let previousMustChangePassword = false
   let resetTimestamp = null
   let temporaryPasswordHash = null
 
@@ -1045,7 +1480,6 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       email: cleanEmail,
     }).select('+password')
 
-    // Do not reveal whether an email is registered.
     if (!user) {
       return res.json({
         success: true,
@@ -1057,11 +1491,11 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     userId = user._id
     previousPasswordHash = user.password
     previousResetTimestamp = user.passwordResetRequestedAt || null
+    previousMustChangePassword = user.mustChangePassword || false
 
     const now = new Date()
     const istDayStart = getISTDayStart(now)
 
-    // Atomically reserve the daily reset.
     const reservedUser = await User.findOneAndUpdate(
       {
         _id: userId,
@@ -1071,9 +1505,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
           { passwordResetRequestedAt: { $lt: istDayStart } },
         ],
       },
-      {
-        $set: { passwordResetRequestedAt: now },
-      },
+      { $set: { passwordResetRequestedAt: now } },
       { new: true }
     )
 
@@ -1087,15 +1519,20 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     resetTimestamp = now
 
     const temporaryPassword = generateTemporaryPassword(12)
+
     temporaryPasswordHash = await bcrypt.hash(temporaryPassword, 12)
 
+    // Set the temporary password and require a password change.
     const passwordUpdate = await User.updateOne(
       {
         _id: userId,
         passwordResetRequestedAt: resetTimestamp,
       },
       {
-        $set: { password: temporaryPasswordHash },
+        $set: {
+          password: temporaryPasswordHash,
+          mustChangePassword: true,
+        },
       }
     )
 
@@ -1119,10 +1556,10 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         ].join('\n'),
       })
     } catch (mailError) {
-      // Restore the previous password and reset timestamp if email fails.
       const rollbackUpdate = {
         $set: {
           password: previousPasswordHash,
+          mustChangePassword: previousMustChangePassword,
         },
       }
 
@@ -1164,7 +1601,6 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   } catch (error) {
     console.error('Forgot-password error:', error.message)
 
-    // Best-effort rollback after an unexpected error.
     if (userId && resetTimestamp && previousPasswordHash) {
       try {
         const rollbackFilter = {
@@ -1179,6 +1615,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         const rollbackUpdate = {
           $set: {
             password: previousPasswordHash,
+            mustChangePassword: previousMustChangePassword,
           },
         }
 
@@ -1208,10 +1645,14 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 })
 
-// Request OTP for changing the authenticated user's email.
+// ==========================================
+// Change Email - Request OTP
+// ==========================================
+
 app.post(
   '/api/auth/change-email/request',
   authenticateToken,
+  requirePasswordChanged,
   async (req, res) => {
     try {
       const { newEmail } = req.body
@@ -1261,10 +1702,11 @@ app.post(
         })
       }
 
-      // Limit OTP requests to one per user every 60 seconds.
       const recentRequest = await EmailChangeOTP.findOne({
         user: user._id,
-        createdAt: { $gt: new Date(Date.now() - 60 * 1000) },
+        createdAt: {
+          $gt: new Date(Date.now() - 60 * 1000),
+        },
       }).sort({ createdAt: -1 })
 
       if (recentRequest) {
@@ -1335,10 +1777,14 @@ app.post(
   }
 )
 
-// Verify OTP and update the authenticated user's email.
+// ==========================================
+// Change Email - Verify OTP
+// ==========================================
+
 app.post(
   '/api/auth/change-email/verify',
   authenticateToken,
+  requirePasswordChanged,
   async (req, res) => {
     try {
       const { otp } = req.body
@@ -1395,6 +1841,7 @@ app.post(
 
       if (!matches) {
         challenge.attempts += 1
+
         const attemptsLeft = Math.max(0, 5 - challenge.attempts)
 
         if (attemptsLeft === 0) {
@@ -1455,6 +1902,7 @@ app.post(
       }
 
       user.email = challenge.newEmail
+
       await user.save()
 
       await EmailChangeOTP.deleteMany({
@@ -1490,7 +1938,10 @@ app.post(
   }
 )
 
-// Start server.
+// ==========================================
+// Start Backend Server
+// ==========================================
+
 async function startServer() {
   try {
     if (!process.env.MONGODB_URI) {
@@ -1501,7 +1952,10 @@ async function startServer() {
       throw new Error('JWT_SECRET must be at least 32 characters')
     }
 
-    await mongoose.connect(process.env.MONGODB_URI)
+    await mongoose.connect(process.env.MONGODB_URI, {
+      retryWrites: false,
+    })
+
     console.log('MongoDB connected successfully')
 
     app.listen(PORT, '0.0.0.0', () => {
