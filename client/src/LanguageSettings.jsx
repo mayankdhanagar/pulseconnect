@@ -255,7 +255,9 @@ export default function LanguageSettings({
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err.message || t.loadError)
+          setError(
+            err.message || languageSettingsTranslations.English.loadError
+          )
         }
       }
     }
@@ -267,7 +269,7 @@ export default function LanguageSettings({
     return () => {
       cancelled = true
     }
-  }, [token, apiBase])
+  }, [token, apiBase, onLanguageChange])
 
   // Open MSG91 verification widget.
   function openMSG91Widget(identifier, language) {
@@ -434,8 +436,14 @@ export default function LanguageSettings({
         }),
       })
 
-      // Every supported language must use MSG91 mobile verification.
-      // Do not start the legacy email OTP flow for French or any other language.
+      // French uses email OTP. The backend uses MSG91 for other languages.
+      if (data.channel === 'email') {
+        setOtp('')
+        setOtpSent(true)
+        setMessage(data.message || t.emailSent)
+        return
+      }
+
       if (data.channel === 'sms') {
         setMessage(t.openingMobile)
         openMSG91Widget(data.identifier, selectedLanguage)
@@ -548,7 +556,7 @@ export default function LanguageSettings({
           </select>
 
           <p style={styles.muted}>
-            {t.mobileOtpInfo}
+            {selectedLanguage === 'French' ? t.emailOtpInfo : t.mobileOtpInfo}
           </p>
 
           <button

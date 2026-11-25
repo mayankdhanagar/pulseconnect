@@ -202,6 +202,8 @@ export default function PaymentCheckout({
   language = 'English',
 }) {
   const t = translations[language] || translations.English
+  const API_BASE = (apiBase || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api')
+    .replace(/\/+$/, '')
 
   const [phone, setPhone] = useState('')
   const [selectedPlan, setSelectedPlan] = useState(() => {
@@ -283,7 +285,7 @@ export default function PaymentCheckout({
     try {
       setLoading(true)
 
-      const response = await fetch(`${apiBase}/payments/initiate`, {
+      const response = await fetch(`${API_BASE}/payments/initiate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

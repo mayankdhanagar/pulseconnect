@@ -268,6 +268,7 @@ export default function AudioTweets({
   const timerRef = useRef(null)
   const secondsRef = useRef(0)
   const previewUrlRef = useRef('')
+  const selectionVersionRef = useRef(0)
 
   const headers = {
     Authorization: `Bearer ${token}`,
@@ -295,6 +296,8 @@ export default function AudioTweets({
   }
 
   function resetSelection() {
+    // Invalidate metadata callbacks from an older selected file.
+    selectionVersionRef.current += 1
     clearPreview()
     setFile(null)
     setFileDuration(0)
@@ -443,6 +446,10 @@ export default function AudioTweets({
 
     if (!selectedFile) return
 
+    // Always clear the previous audio and its OTP before checking the new file.
+    resetSelection()
+    const currentSelection = selectionVersionRef.current
+
     setError('')
     setMessage('')
 
@@ -456,8 +463,6 @@ export default function AudioTweets({
       return
     }
 
-    clearPreview()
-
     const url = URL.createObjectURL(selectedFile)
     previewUrlRef.current = url
 
@@ -466,6 +471,9 @@ export default function AudioTweets({
     audio.src = url
 
     audio.onloadedmetadata = () => {
+      // Ignore an old file if the user selected another one in the meantime.
+      if (selectionVersionRef.current !== currentSelection) return
+
       if (!Number.isFinite(audio.duration) || audio.duration <= 0) {
         setError(t.readDuration)
         clearPreview()
@@ -485,12 +493,15 @@ export default function AudioTweets({
     }
 
     audio.onerror = () => {
+      if (selectionVersionRef.current !== currentSelection) return
       setError(t.readFile)
       clearPreview()
     }
   }
 
   async function requestOTP() {
+    if (loading) return
+
     setError('')
     setMessage('')
 
@@ -498,11 +509,12 @@ export default function AudioTweets({
       setError(t.selectFirst)
       return
     }
-
     if (!isUploadTimeAllowed()) {
       setError(t.time)
       return
-    }
+      }
+
+    
 
     try {
       setLoading(true)
@@ -529,6 +541,8 @@ export default function AudioTweets({
 
   async function uploadAudio(event) {
     event.preventDefault()
+    if (loading) return
+
     setError('')
     setMessage('')
 
@@ -536,16 +550,17 @@ export default function AudioTweets({
       setError(t.selectOtp)
       return
     }
+    if (!isUploadTimeAllowed()) {
+         setError(t.time)
+        return
+      }
 
     if (!/^\d{6}$/.test(otp.trim())) {
       setError(t.invalidOtp)
       return
     }
 
-    if (!isUploadTimeAllowed()) {
-      setError(t.time)
-      return
-    }
+    
 
     const actualDuration = fileDuration || duration
 
@@ -625,6 +640,7 @@ export default function AudioTweets({
             type="file"
             accept="audio/*"
             onChange={handleFileChange}
+            disabled={recording || loading}
             hidden
           />
         </label>

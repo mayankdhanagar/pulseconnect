@@ -8,28 +8,12 @@ import './App.css'
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
 
-const MSG91_WIDGET_ID = import.meta.env.VITE_MSG91_WIDGET_ID
-const MSG91_TOKEN_AUTH = import.meta.env.VITE_MSG91_TOKEN_AUTH
-
 const POSTS_URL = API_BASE + '/posts'
 
 const TOKEN_KEY = 'pulseconnect_token'
 const NOTIFICATION_KEY = 'pulseconnect_notifications'
-
-const EXTRA_UI = {
-Hindi: { loggedInAs:'लॉग इन हैं:', writePost:'पोस्ट लिखें', loadingPosts:'पोस्ट लोड हो रही हैं...', noPosts:'अभी कोई पोस्ट नहीं है। पहली पोस्ट आप करें!', likes:'पसंद', reply:'जवाब दें', share:'शेयर करें', about:'PulseConnect के बारे में', aboutText:'बातचीत, समुदाय और नए विचारों के लिए एक जगह।', accountSecurity:'खाते की सुरक्षा', securityText:'हाल के लॉगिन देखें। कोई अनजान गतिविधि दिखे तो सहायता से संपर्क करें।', whatsNext:'आगे क्या?', whatsNextText:'प्रोफ़ाइल, सब्सक्रिप्शन, ऑडियो पोस्ट, सूचनाएं और बहुत कुछ।', enterName:'अपना नाम दर्ज करें', chooseUsername:'यूज़रनेम चुनें', enterPassword:'अपना पासवर्ड दर्ज करें', mobileWithCode:'देश कोड सहित मोबाइल नंबर दर्ज करें', enterUsernameEmail:'यूज़रनेम या ईमेल दर्ज करें', enterRegisteredEmail:'अपना रजिस्टर्ड ईमेल दर्ज करें', forgotText:'अपने PulseConnect खाते से जुड़ा ईमेल दर्ज करें। हम आपको अस्थायी पासवर्ड भेजेंगे।', oneTimeDaily:'आप इस विकल्प का उपयोग दिन में केवल एक बार कर सकते हैं।', sendingTemporary:'अस्थायी पासवर्ड भेजा जा रहा है...', sendTemporary:'अस्थायी पासवर्ड भेजें', backLogin:'← लॉगिन पर वापस जाएं', verifyLogin:'लॉगिन सत्यापित करें', loginCodeText:'आपके रजिस्टर्ड ईमेल पर 6 अंकों का कोड भेजा गया है। लॉगिन पूरा करने के लिए कोड दर्ज करें।', sixDigitCode:'6 अंकों का सत्यापन कोड', enterOtp:'6 अंकों का OTP दर्ज करें', verifyLoginButton:'OTP सत्यापित करें और लॉगिन करें', loginText:'बातचीत में शामिल होने के लिए लॉगिन करें।', registerText:'PulseConnect से जुड़ें और अपनी दुनिया साझा करें।', createAccountButton:'खाता बनाएं →', noAccount:'खाता नहीं है? ', alreadyRegistered:'पहले से रजिस्टर हैं? ', mobileVerification:'मोबाइल सत्यापन', notAvailable:'उपलब्ध नहीं', mobileNotAdded:'मोबाइल नंबर नहीं जोड़ा गया', changeEmail:'रजिस्टर्ड ईमेल बदलें', refreshing:'रीफ़्रेश हो रहा है...', refresh:'↻ रीफ़्रेश', loadingHistory:'लॉगिन इतिहास लोड हो रहा है...', currentPlan:'वर्तमान प्लान', freePlanDescription:'शुरुआत करने के लिए', browserNotifications:'ब्राउज़र सूचनाएं', browserNotificationsText:'cricket या science शब्दों वाली नई पोस्ट का पूरा टेक्स्ट प्राप्त करें।', status:'स्थिति:', enabled:'चालू', disabled:'बंद', enableNotifications:'ब्राउज़र सूचनाएं चालू करें', disableNotifications:'ब्राउज़र सूचनाएं बंद करें', notificationsBlocked:'ब्राउज़र सेटिंग्स में सूचनाएं बंद हैं। इस वेबसाइट के लिए सूचनाएं चालू करें।'},
-Spanish: { loggedInAs:'Conectado como', writePost:'Escribe una publicación', loadingPosts:'Cargando publicaciones...', noPosts:'Aún no hay publicaciones. ¡Sé el primero!', likes:'Me gusta', reply:'Responder', share:'Compartir', about:'Acerca de PulseConnect', aboutText:'Un lugar para conversar, crear comunidades y compartir ideas.', accountSecurity:'Seguridad de la cuenta', securityText:'Revisa los inicios de sesión recientes y contacta con soporte si ves actividad desconocida.', whatsNext:'¿Qué sigue?', whatsNextText:'Perfiles, suscripciones, publicaciones de audio, notificaciones y más.', enterName:'Introduce tu nombre', chooseUsername:'Elige un nombre de usuario', enterPassword:'Introduce tu contraseña', mobileWithCode:'Introduce el móvil con el código del país', enterUsernameEmail:'Introduce usuario o correo', enterRegisteredEmail:'Introduce tu correo registrado', forgotPassword:'¿Olvidaste tu contraseña?', forgotText:'Introduce el correo registrado en tu cuenta de PulseConnect. Te enviaremos una contraseña temporal.', oneTimeDaily:'Puedes usar esta opción solo una vez al día.', sendingTemporary:'Enviando contraseña temporal...', sendTemporary:'Enviar contraseña temporal', backLogin:'← Volver al inicio de sesión', verifyLogin:'Verifica tu inicio de sesión', loginCodeText:'Enviamos un código de 6 dígitos a tu correo registrado. Introdúcelo para completar el inicio de sesión.', sixDigitCode:'Código de verificación de 6 dígitos', enterOtp:'Introduce el OTP de 6 dígitos', verifyLoginButton:'Verificar OTP e iniciar sesión', loginText:'Inicia sesión para unirte a la conversación.', registerText:'Únete a PulseConnect y comparte tu mundo.', createAccountButton:'Crear cuenta →', noAccount:'¿No tienes cuenta? ', alreadyRegistered:'¿Ya estás registrado? ', mobileVerification:'Verificación del móvil', notAvailable:'No disponible', mobileNotAdded:'No se añadió ningún móvil', changeEmail:'Cambiar correo registrado', refreshing:'Actualizando...', refresh:'↻ Actualizar', loadingHistory:'Cargando historial de inicios de sesión...', currentPlan:'PLAN ACTUAL', freePlanDescription:'Para empezar', browserNotifications:'Notificaciones del navegador', browserNotificationsText:'Recibe el texto completo de nuevas publicaciones que contengan cricket o science.', status:'Estado:', enabled:'Activadas', disabled:'Desactivadas', enableNotifications:'Activar notificaciones del navegador', disableNotifications:'Desactivar notificaciones del navegador', notificationsBlocked:'Las notificaciones están bloqueadas. Permítelas para este sitio.'},
-Portuguese: { loggedInAs:'Conectado como', writePost:'Escreva uma publicação', loadingPosts:'Carregando publicações...', noPosts:'Ainda não há publicações. Seja o primeiro!', likes:'Curtidas', reply:'Responder', share:'Compartilhar', about:'Sobre o PulseConnect', aboutText:'Um lugar para conversas, comunidades e novas ideias.', accountSecurity:'Segurança da conta', securityText:'Revise os logins recentes e contate o suporte se notar atividade desconhecida.', whatsNext:'O que vem a seguir?', whatsNextText:'Perfis, assinaturas, publicações de áudio, notificações e muito mais.', enterName:'Digite seu nome', chooseUsername:'Escolha um nome de usuário', enterPassword:'Digite sua senha', mobileWithCode:'Digite o celular com código do país', enterUsernameEmail:'Digite usuário ou e-mail', enterRegisteredEmail:'Digite seu e-mail cadastrado', forgotPassword:'Esqueceu sua senha?', forgotText:'Digite o e-mail cadastrado na sua conta PulseConnect. Enviaremos uma senha temporária.', oneTimeDaily:'Você pode usar esta opção apenas uma vez por dia.', sendingTemporary:'Enviando senha temporária...', sendTemporary:'Enviar senha temporária', backLogin:'← Voltar ao login', verifyLogin:'Verifique seu login', loginCodeText:'Enviamos um código de 6 dígitos para seu e-mail cadastrado. Digite-o para concluir o login.', sixDigitCode:'Código de verificação de 6 dígitos', enterOtp:'Digite o OTP de 6 dígitos', verifyLoginButton:'Verificar OTP e entrar', loginText:'Entre para participar da conversa.', registerText:'Junte-se ao PulseConnect e compartilhe seu mundo.', createAccountButton:'Criar conta →', noAccount:'Não tem uma conta? ', alreadyRegistered:'Já está cadastrado? ', mobileVerification:'Verificação do celular', notAvailable:'Não disponível', mobileNotAdded:'Número de celular não adicionado', changeEmail:'Alterar e-mail cadastrado', refreshing:'Atualizando...', refresh:'↻ Atualizar', loadingHistory:'Carregando histórico de login...', currentPlan:'PLANO ATUAL', freePlanDescription:'Para começar', browserNotifications:'Notificações do navegador', browserNotificationsText:'Receba o texto completo de novas publicações que contenham cricket ou science.', status:'Status:', enabled:'Ativadas', disabled:'Desativadas', enableNotifications:'Ativar notificações do navegador', disableNotifications:'Desativar notificações do navegador', notificationsBlocked:'As notificações estão bloqueadas. Permita notificações para este site.'},
-Chinese: { loggedInAs:'登录用户', writePost:'写一条帖子', loadingPosts:'正在加载帖子...', noPosts:'暂无帖子。成为第一个发布的人吧！', likes:'赞', reply:'回复', share:'分享', about:'关于 PulseConnect', aboutText:'一个用于交流、社区和分享新想法的地方。', accountSecurity:'账户安全', securityText:'查看最近的登录记录。如发现异常活动，请联系支持团队。', whatsNext:'接下来', whatsNextText:'个人资料、订阅、音频帖子、通知等。', enterName:'输入姓名', chooseUsername:'选择用户名', enterPassword:'输入密码', mobileWithCode:'输入带国家代码的手机号码', enterUsernameEmail:'输入用户名或邮箱', enterRegisteredEmail:'输入注册邮箱', forgotPassword:'忘记密码？', forgotText:'请输入 PulseConnect 账户注册邮箱。我们会向你发送临时密码。', oneTimeDaily:'此功能每天只能使用一次。', sendingTemporary:'正在发送临时密码...', sendTemporary:'发送临时密码', backLogin:'← 返回登录', verifyLogin:'验证登录', loginCodeText:'我们已向你的注册邮箱发送六位验证码。请输入验证码以完成登录。', sixDigitCode:'六位验证码', enterOtp:'输入六位 OTP', verifyLoginButton:'验证 OTP 并登录', loginText:'登录以加入对话。', registerText:'加入 PulseConnect，分享你的世界。', createAccountButton:'创建账户 →', noAccount:'还没有账户？', alreadyRegistered:'已经注册？', mobileVerification:'手机验证', notAvailable:'不可用', mobileNotAdded:'尚未添加手机号码', changeEmail:'更改注册邮箱', refreshing:'正在刷新...', refresh:'↻ 刷新', loadingHistory:'正在加载登录记录...', currentPlan:'当前套餐', freePlanDescription:'适合开始使用', browserNotifications:'浏览器通知', browserNotificationsText:'接收包含 cricket 或 science 关键词的新帖全文。', status:'状态：', enabled:'已启用', disabled:'已停用', enableNotifications:'启用浏览器通知', disableNotifications:'关闭浏览器通知', notificationsBlocked:'浏览器设置已阻止通知。请允许此网站发送通知。'},
-French: { loggedInAs:'Connecté en tant que', writePost:'Écrire une publication', loadingPosts:'Chargement des publications...', noPosts:'Aucune publication. Soyez le premier à publier !', likes:'J’aime', reply:'Répondre', share:'Partager', about:'À propos de PulseConnect', aboutText:'Un lieu de conversation, de communautés et de nouvelles idées.', accountSecurity:'Sécurité du compte', securityText:'Consultez les connexions récentes et contactez le support en cas d’activité inconnue.', whatsNext:'Et ensuite ?', whatsNextText:'Profils, abonnements, publications audio, notifications et plus encore.', enterName:'Saisissez votre nom', chooseUsername:'Choisissez un nom d’utilisateur', enterPassword:'Saisissez votre mot de passe', mobileWithCode:'Saisissez le numéro avec l’indicatif du pays', enterUsernameEmail:'Saisissez le nom ou l’e-mail', enterRegisteredEmail:'Saisissez votre e-mail enregistré', forgotPassword:'Mot de passe oublié ?', forgotText:'Saisissez l’adresse e-mail associée à votre compte PulseConnect. Nous vous enverrons un mot de passe temporaire.', oneTimeDaily:'Cette option ne peut être utilisée qu’une fois par jour.', sendingTemporary:'Envoi du mot de passe temporaire...', sendTemporary:'Envoyer le mot de passe temporaire', backLogin:'← Retour à la connexion', verifyLogin:'Vérifiez votre connexion', loginCodeText:'Un code à six chiffres a été envoyé à votre adresse e-mail enregistrée. Saisissez-le pour terminer la connexion.', sixDigitCode:'Code de vérification à six chiffres', enterOtp:'Saisissez le code OTP à six chiffres', verifyLoginButton:'Vérifier le code et se connecter', loginText:'Connectez-vous pour rejoindre la conversation.', registerText:'Rejoignez PulseConnect et partagez votre univers.', createAccountButton:'Créer un compte →', noAccount:'Pas encore de compte ? ', alreadyRegistered:'Déjà inscrit ? ', mobileVerification:'Vérification du mobile', notAvailable:'Indisponible', mobileNotAdded:'Aucun numéro mobile ajouté', changeEmail:'Modifier l’e-mail enregistré', refreshing:'Actualisation...', refresh:'↻ Actualiser', loadingHistory:'Chargement de l’historique des connexions...', currentPlan:'FORMULE ACTUELLE', freePlanDescription:'Pour commencer', browserNotifications:'Notifications du navigateur', browserNotificationsText:'Recevez le texte complet des nouvelles publications contenant cricket ou science.', status:'Statut :', enabled:'Activées', disabled:'Désactivées', enableNotifications:'Activer les notifications du navigateur', disableNotifications:'Désactiver les notifications du navigateur', notificationsBlocked:'Les notifications sont bloquées. Autorisez-les pour ce site.'}
-}
-
-
-Object.assign(EXTRA_UI.Hindi, { homeFeed:'होम फ़ीड', yourProfile:'आपकी प्रोफ़ाइल', profileSubtitle:'आपके खाते की जानकारी और हाल के लॉगिन।', settingsSubtitle:'अपना PulseConnect अनुभव प्रबंधित करें।', plansSubtitle:'अपनी बातचीत के लिए सही प्लान चुनें।', homeSubtitle:'आपकी दुनिया, रियल टाइम में।', fullName:'पूरा नाम', username:'यूज़रनेम', email:'ईमेल', mobile:'मोबाइल नंबर', subscription:'सब्सक्रिप्शन', memberSince:'सदस्य बने', accountDetails:'खाते की जानकारी', loginHistory:'लॉगिन इतिहास', choosePlan:'अपना PulseConnect प्लान चुनें', accountSettings:'खाता सेटिंग्स', currentEmail:'वर्तमान रजिस्टर्ड ईमेल', newEmail:'नया ईमेल पता', sendOtp:'सत्यापन OTP भेजें', sendingOtp:'OTP भेजा जा रहा है...', verificationCode:'सत्यापन कोड', verifying:'सत्यापन हो रहा है...', verifyUpdateEmail:'OTP सत्यापित करें और ईमेल अपडेट करें', backProfile:'प्रोफ़ाइल पर वापस जाएं' });
-Object.assign(EXTRA_UI.Spanish, { homeFeed:'Inicio', yourProfile:'Tu perfil', profileSubtitle:'Los datos de tu cuenta y tus inicios de sesión recientes.', settingsSubtitle:'Administra tu experiencia en PulseConnect.', plansSubtitle:'Elige un plan adecuado para tus conversaciones.', homeSubtitle:'Tu mundo, en tiempo real.', fullName:'Nombre completo', username:'Nombre de usuario', email:'Correo electrónico', mobile:'Número móvil', subscription:'Suscripción', memberSince:'Miembro desde', accountDetails:'Datos de la cuenta', loginHistory:'Historial de inicio de sesión', choosePlan:'Elige tu plan de PulseConnect', accountSettings:'Configuración de la cuenta', currentEmail:'Correo registrado actual', newEmail:'Nueva dirección de correo', sendOtp:'Enviar OTP de verificación', sendingOtp:'Enviando OTP...', verificationCode:'Código de verificación', verifying:'Verificando...', verifyUpdateEmail:'Verificar OTP y actualizar correo', backProfile:'Volver al perfil' });
-Object.assign(EXTRA_UI.Portuguese, { homeFeed:'Página inicial', yourProfile:'Seu perfil', profileSubtitle:'Detalhes da sua conta e logins recentes.', settingsSubtitle:'Gerencie sua experiência no PulseConnect.', plansSubtitle:'Escolha um plano para suas conversas.', homeSubtitle:'Seu mundo em tempo real.', fullName:'Nome completo', username:'Nome de usuário', email:'E-mail', mobile:'Número de celular', subscription:'Assinatura', memberSince:'Membro desde', accountDetails:'Detalhes da conta', loginHistory:'Histórico de login', choosePlan:'Escolha seu plano PulseConnect', accountSettings:'Configurações da conta', currentEmail:'E-mail cadastrado atual', newEmail:'Novo endereço de e-mail', sendOtp:'Enviar código de verificação', sendingOtp:'Enviando OTP...', verificationCode:'Código de verificação', verifying:'Verificando...', verifyUpdateEmail:'Verificar OTP e atualizar e-mail', backProfile:'Voltar ao perfil' });
-Object.assign(EXTRA_UI.Chinese, { homeFeed:'首页动态', yourProfile:'你的个人资料', profileSubtitle:'账户详情和最近的登录记录。', settingsSubtitle:'管理你的 PulseConnect 使用体验。', plansSubtitle:'选择适合你交流需求的套餐。', homeSubtitle:'实时了解你的世界。', fullName:'姓名', username:'用户名', email:'电子邮箱', mobile:'手机号码', subscription:'订阅', memberSince:'加入时间', accountDetails:'账户详情', loginHistory:'登录历史', choosePlan:'选择你的 PulseConnect 套餐', accountSettings:'账户设置', currentEmail:'当前注册邮箱', newEmail:'新邮箱地址', sendOtp:'发送验证码', sendingOtp:'正在发送 OTP...', verificationCode:'验证码', verifying:'正在验证...', verifyUpdateEmail:'验证 OTP 并更新邮箱', backProfile:'返回个人资料' });
-Object.assign(EXTRA_UI.French, { homeFeed:'Fil d’actualité', yourProfile:'Votre profil', profileSubtitle:'Les détails de votre compte et vos connexions récentes.', settingsSubtitle:'Gérez votre expérience PulseConnect.', plansSubtitle:'Choisissez une formule adaptée à vos conversations.', homeSubtitle:'Votre monde, en temps réel.', fullName:'Nom complet', username:'Nom d’utilisateur', email:'Adresse e-mail', mobile:'Numéro mobile', subscription:'Abonnement', memberSince:'Membre depuis', accountDetails:'Détails du compte', loginHistory:'Historique des connexions', choosePlan:'Choisissez votre formule PulseConnect', accountSettings:'Paramètres du compte', currentEmail:'Adresse e-mail actuelle', newEmail:'Nouvelle adresse e-mail', sendOtp:'Envoyer le code de vérification', sendingOtp:'Envoi du code...', verificationCode:'Code de vérification', verifying:'Vérification...', verifyUpdateEmail:'Vérifier et mettre à jour l’e-mail', backProfile:'Retour au profil' });
+const MSG91_WIDGET_ID = import.meta.env.VITE_MSG91_WIDGET_ID
+const MSG91_TOKEN_AUTH = import.meta.env.VITE_MSG91_TOKEN_AUTH
 
 function App() {
   const [post, setPost] = useState('')
@@ -43,10 +27,15 @@ function App() {
   const [user, setUser] = useState(null)
   const [language, setLanguage] = useState('English')
 
+  // Keep the selected language in sync with child components.
+  const handleLanguageChange = useCallback((newLanguage) => {
+    if (typeof newLanguage === 'string' && newLanguage.trim()) {
+      setLanguage(newLanguage)
+    }
+  }, [])
+
 function t(key) {
-  // Use the extra UI translations first, then the central translations.
-  // This keeps labels translated even when a key is not in translations.js.
-  return EXTRA_UI[language]?.[key] ?? translate(language, key, 'app')
+  return translate(language, key, 'app')
 }
   const [loginHistory, setLoginHistory] = useState([])
   const [profileLoading, setProfileLoading] = useState(false)
@@ -57,18 +46,13 @@ function t(key) {
   const [paymentsError, setPaymentsError] = useState('')
   const [authMode, setAuthMode] = useState('login')
   const [authLoading, setAuthLoading] = useState(false)
-  // Change temporary password state
-const [currentPassword, setCurrentPassword] = useState('')
-const [newPassword, setNewPassword] = useState('')
-const [confirmPassword, setConfirmPassword] = useState('')
-const [passwordChangeLoading, setPasswordChangeLoading] = useState(false)
-const [passwordChangeError, setPasswordChangeError] = useState('')
-const [passwordChangeMessage, setPasswordChangeMessage] = useState('')
 
   // Browser notifications
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const knownPostIds = useRef(new Set())
   const firstPostsLoad = useRef(true)
+  // Do not send notifications until the initial feed has loaded.
+  const [postsInitialized, setPostsInitialized] = useState(false)
 
   // Chrome login OTP state
   const [loginOTPSent, setLoginOTPSent] = useState(false)
@@ -76,14 +60,14 @@ const [passwordChangeMessage, setPasswordChangeMessage] = useState('')
   const [loginOTP, setLoginOTP] = useState('')
   const [loginOTPMessage, setLoginOTPMessage] = useState('')
 
- 
   // Forgot password state
   const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
   const [forgotPhone, setForgotPhone] = useState('')
+  const [forgotMethod, setForgotMethod] = useState('email')
   const [forgotLoading, setForgotLoading] = useState(false)
   const [forgotMessage, setForgotMessage] = useState('')
   const [forgotError, setForgotError] = useState('')
-  const [forgotDailyLimitReached, setForgotDailyLimitReached] = useState(false)
 
   // Email change state
   const [newEmail, setNewEmail] = useState('')
@@ -92,6 +76,15 @@ const [passwordChangeMessage, setPasswordChangeMessage] = useState('')
   const [emailChangeLoading, setEmailChangeLoading] = useState(false)
   const [emailChangeMessage, setEmailChangeMessage] = useState('')
   const [emailChangeError, setEmailChangeError] = useState('')
+
+
+  // Change password state
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordChangeLoading, setPasswordChangeLoading] = useState(false)
+  const [passwordChangeMessage, setPasswordChangeMessage] = useState('')
+  const [passwordChangeError, setPasswordChangeError] = useState('')
 
   const [form, setForm] = useState({
     name: '',
@@ -119,34 +112,34 @@ const [passwordChangeMessage, setPasswordChangeMessage] = useState('')
   }
 
 
-  // Load the user's saved language preference.
+const fetchProfile = useCallback(async (currentToken = token) => {
+  if (!currentToken) return
 
-  const fetchProfile = useCallback(async (currentToken = token) => {
-    if (!currentToken) return
+  try {
+    setProfileLoading(true)
 
-    try {
-      setProfileLoading(true)
+    const data = await requestJSON(API_BASE + '/auth/me', {
+      headers: {
+        Authorization: 'Bearer ' + currentToken,
+      },
+    })
 
-      const data = await requestJSON(API_BASE + '/auth/me', {
-        headers: {
-          Authorization: 'Bearer ' + currentToken,
-        },
-      })
+    setUser(data.user)
 
-      setUser(data.user)
+    // Load saved browser notification preference
+    const savedPreference = Boolean(data.user.notificationsEnabled)
+    setNotificationsEnabled(savedPreference)
+    localStorage.setItem(NOTIFICATION_KEY, String(savedPreference))
 
-      const savedPreference = Boolean(data.user.notificationsEnabled)
-      setNotificationsEnabled(savedPreference)
-      localStorage.setItem(NOTIFICATION_KEY, String(savedPreference))
+    setLoginHistory(
+      Array.isArray(data.loginHistory) ? data.loginHistory : []
+    )
+  } finally {
+    setProfileLoading(false)
+  }
+}, [token])
 
-      setLoginHistory(
-        Array.isArray(data.loginHistory) ? data.loginHistory : []
-      )
-    } finally {
-      setProfileLoading(false)
-    }
-  }, [token])
-
+  // Fetch payment history
   const fetchPaymentHistory = useCallback(async () => {
     if (!token) return
 
@@ -159,7 +152,6 @@ const [passwordChangeMessage, setPasswordChangeMessage] = useState('')
           Authorization: 'Bearer ' + token,
         },
       })
-
       const data = await response.json()
 
       if (!response.ok || !data.success) {
@@ -180,6 +172,7 @@ const [passwordChangeMessage, setPasswordChangeMessage] = useState('')
     }
   }, [activeView, token, fetchPaymentHistory])
 
+  // Load the user's saved language preference.
 useEffect(() => {
   if (!token) {
     setLanguage('English')
@@ -197,8 +190,6 @@ useEffect(() => {
       })
 
       if (!cancelled) {
-        // The API returns preferredLanguage. Do not reset the language
-        // whenever the user changes pages.
         const savedLanguage = data.preferredLanguage || data.language || 'English'
         setLanguage(savedLanguage)
       }
@@ -358,23 +349,15 @@ useEffect(() => {
     }
   }
 
-  // Start forgot-password verification using the registered mobile number.
+  // Email-based password reset.
   async function handleForgotPassword(event) {
     event.preventDefault()
     if (forgotLoading) return
 
-    const normalizedPhone = forgotPhone.trim()
+    const normalizedEmail = forgotEmail.trim().toLowerCase()
 
-    if (!/^\+?[0-9\s()-]{10,16}$/.test(normalizedPhone)) {
-      setForgotError('Please enter a valid registered mobile number.')
-      setForgotMessage('')
-      return
-    }
-
-    if (!MSG91_WIDGET_ID || !MSG91_TOKEN_AUTH) {
-      setForgotError(
-        'MSG91 widget is not configured. Check the client .env file.'
-      )
+    if (!normalizedEmail) {
+      setForgotError('Please enter your registered email address.')
       setForgotMessage('')
       return
     }
@@ -384,103 +367,82 @@ useEffect(() => {
       setForgotError('')
       setForgotMessage('')
 
-      const data = await requestJSON(
-        API_BASE + '/auth/forgot-password/request-mobile-otp',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            phone: normalizedPhone,
-          }),
-        }
+      const data = await requestJSON(API_BASE + '/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail }),
+      })
+
+      setForgotMessage(
+        data.message ||
+          'A temporary password has been sent to your registered email address.'
       )
-
-      if (!data.identifier) {
-        throw new Error('The server did not return a mobile number for verification.')
-      }
-
-      setForgotMessage('Opening secure mobile OTP verification...')
-      openForgotPasswordMSG91Widget(data.identifier)
     } catch (err) {
-      const message = err.message || 'Could not start mobile verification.'
-      if (message.toLowerCase().includes('one time per day')) {
-        setForgotDailyLimitReached(true)
-      }
-      setForgotError(message)
-      setForgotMessage('')
+      setForgotError(err.message || 'Unable to reset your password.')
     } finally {
       setForgotLoading(false)
     }
   }
 
-  // Open MSG91's secure OTP widget for password reset.
+  // Load and open the same MSG91 widget used by Language Settings.
   function openForgotPasswordMSG91Widget(identifier) {
+    if (!MSG91_WIDGET_ID || !MSG91_TOKEN_AUTH) {
+      throw new Error(
+        'MSG91 widget is not configured. Check VITE_MSG91_WIDGET_ID and VITE_MSG91_TOKEN_AUTH in client/.env.'
+      )
+    }
+
     const configuration = {
       widgetId: MSG91_WIDGET_ID,
       tokenAuth: MSG91_TOKEN_AUTH,
       identifier,
       exposeMethods: false,
 
-      success: async (data) => {
+      success: async (widgetData) => {
         try {
           setForgotLoading(true)
           setForgotError('')
-          setForgotMessage('Mobile number verified. Sending your temporary password...')
+          setForgotMessage('Mobile verified. Preparing your temporary password...')
 
           const accessToken =
-            data?.['access-token'] ||
-            data?.accessToken ||
-            data?.access_token ||
-            data?.token ||
-            data?.message
+            widgetData?.['access-token'] ||
+            widgetData?.accessToken ||
+            widgetData?.access_token ||
+            widgetData?.token ||
+            widgetData?.message
 
           if (typeof accessToken !== 'string' || !accessToken) {
-            throw new Error(
-              'MSG91 did not return a verification token. Please try again.'
-            )
+            throw new Error('MSG91 did not return a verification token. Please try again.')
           }
 
           const verification = await requestJSON(
             API_BASE + '/auth/forgot-password/verify-mobile-token',
             {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ accessToken }),
             }
           )
 
           if (!verification.resetToken) {
-            throw new Error('Mobile verification succeeded, but no reset token was received.')
+            throw new Error('Mobile verification did not return a reset token.')
           }
 
-          const resetResult = await requestJSON(
+          const reset = await requestJSON(
             API_BASE + '/auth/forgot-password/reset-with-mobile',
             {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                resetToken: verification.resetToken,
-              }),
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ resetToken: verification.resetToken }),
             }
           )
 
           setForgotMessage(
-            resetResult.message ||
+            reset.message ||
               'A temporary password has been sent to your registered email address.'
           )
-          setForgotError('')
         } catch (err) {
-          const message = err.message || 'Mobile verification or password reset failed.'
-          if (message.toLowerCase().includes('one time per day')) {
-            setForgotDailyLimitReached(true)
-          }
-          setForgotError(message)
+          setForgotError(err.message || 'Could not complete mobile password reset.')
           setForgotMessage('')
         } finally {
           setForgotLoading(false)
@@ -488,8 +450,8 @@ useEffect(() => {
       },
 
       failure: (widgetError) => {
-        console.error('MSG91 forgot-password widget error:', widgetError)
-        setForgotError('MSG91 verification failed. Please try again.')
+        console.error('Forgot-password MSG91 widget error:', widgetError)
+        setForgotError('Mobile OTP verification failed. Please try again.')
         setForgotMessage('')
         setForgotLoading(false)
       },
@@ -505,26 +467,16 @@ useEffect(() => {
     )
 
     if (existingScript) {
-      existingScript.addEventListener(
-        'load',
-        () => {
-          if (typeof window.initSendOTP === 'function') {
-            window.initSendOTP(configuration)
-          } else {
-            setForgotError('MSG91 widget could not be initialized.')
-          }
-        },
-        { once: true }
-      )
-
-      existingScript.addEventListener(
-        'error',
-        () => {
-          setForgotError('Could not load MSG91 widget. Please try again.')
-        },
-        { once: true }
-      )
-
+      existingScript.addEventListener('load', () => {
+        if (typeof window.initSendOTP === 'function') {
+          window.initSendOTP(configuration)
+        } else {
+          setForgotError('MSG91 widget could not be initialized.')
+        }
+      }, { once: true })
+      existingScript.addEventListener('error', () => {
+        setForgotError('Could not load MSG91 widget. Please try again.')
+      }, { once: true })
       return
     }
 
@@ -532,7 +484,6 @@ useEffect(() => {
     script.src = 'https://verify.msg91.com/otp-provider.js'
     script.async = true
     script.dataset.msg91Widget = 'true'
-
     script.onload = () => {
       if (typeof window.initSendOTP === 'function') {
         window.initSendOTP(configuration)
@@ -540,16 +491,56 @@ useEffect(() => {
         setForgotError('MSG91 widget could not be initialized.')
       }
     }
-
     script.onerror = () => {
       setForgotError('Could not load MSG91 widget. Please try again.')
     }
-
     document.body.appendChild(script)
   }
 
+  // Request mobile verification before allowing a reset.
+  async function handleForgotPasswordByPhone(event) {
+    event.preventDefault()
+    if (forgotLoading) return
+
+    const digits = forgotPhone.replace(/\D/g, '')
+    const normalizedPhone =
+      digits.length === 10 ? digits : digits.startsWith('91') && digits.length === 12
+        ? digits.slice(2)
+        : ''
+
+    if (!/^\d{10}$/.test(normalizedPhone)) {
+      setForgotError('Please enter a valid 10-digit Indian mobile number.')
+      setForgotMessage('')
+      return
+    }
+
+    try {
+      setForgotLoading(true)
+      setForgotError('')
+      setForgotMessage('')
+
+      const data = await requestJSON(
+        API_BASE + '/auth/forgot-password/request-mobile-otp',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: normalizedPhone }),
+        }
+      )
+
+      setForgotMessage('Opening secure mobile verification...')
+      openForgotPasswordMSG91Widget(data.identifier || '91' + normalizedPhone)
+    } catch (err) {
+      setForgotError(err.message || 'Could not start mobile verification.')
+    } finally {
+      setForgotLoading(false)
+    }
+  }
+
   function openForgotPassword() {
+    setForgotEmail(form.identifier.includes('@') ? form.identifier : '')
     setForgotPhone('')
+    setForgotMethod('email')
     setForgotError('')
     setForgotMessage('')
     setShowForgotPassword(true)
@@ -557,7 +548,6 @@ useEffect(() => {
 
   function backToLogin() {
     setShowForgotPassword(false)
-    setForgotPhone('')
     setForgotError('')
     setForgotMessage('')
     setForgotLoading(false)
@@ -572,6 +562,7 @@ useEffect(() => {
     setNotificationsEnabled(false)
     knownPostIds.current.clear()
     firstPostsLoad.current = true
+    setPostsInitialized(false)
     setLoginHistory([])
     setPosts([])
     setPost('')
@@ -589,6 +580,7 @@ useEffect(() => {
     setLoginOTPMessage('')
 
     setShowForgotPassword(false)
+    setForgotEmail('')
     setForgotPhone('')
     setForgotMessage('')
     setForgotError('')
@@ -614,6 +606,7 @@ useEffect(() => {
       const fetchedPosts = Array.isArray(data.posts) ? data.posts : []
 
       setPosts(fetchedPosts)
+      setPostsInitialized(true)
     } catch (err) {
       setError(err.message || 'Could not load posts')
     } finally {
@@ -673,20 +666,11 @@ useEffect(() => {
     setActiveView('plans')
 
     if (paymentStatus === 'success') {
-      setPaymentNotice({
-        type: 'success',
-        message: 'Payment successful! Your subscription details are being refreshed.',
-      })
+      setPaymentNotice({ type: 'success' })
     } else if (paymentStatus === 'failed') {
-      setPaymentNotice({
-        type: 'error',
-        message: 'Payment failed. No subscription upgrade was applied.',
-      })
+      setPaymentNotice({ type: 'error' })
     } else {
-      setPaymentNotice({
-        type: 'warning',
-        message: 'Payment status is pending verification. Please check your payment history shortly.',
-      })
+      setPaymentNotice({ type: 'warning' })
     }
 
     window.history.replaceState({}, document.title, window.location.pathname)
@@ -755,7 +739,7 @@ useEffect(() => {
 
   // Notify only for newly received posts containing cricket or science.
   useEffect(() => {
-    if (!user || !notificationsEnabled || !('Notification' in window)) {
+    if (!user || !postsInitialized || !notificationsEnabled || !('Notification' in window)) {
       return
     }
 
@@ -786,7 +770,7 @@ useEffect(() => {
         })
       }
     })
-  }, [posts, user, notificationsEnabled])
+  }, [posts, user, notificationsEnabled, postsInitialized])
 
   // Check for new posts every 15 seconds.
   useEffect(() => {
@@ -797,6 +781,7 @@ useEffect(() => {
         .then((data) => {
           const fetchedPosts = Array.isArray(data.posts) ? data.posts : []
           setPosts(fetchedPosts)
+          setPostsInitialized(true)
         })
         .catch(() => {
           // Keep the existing feed if the refresh fails.
@@ -949,82 +934,87 @@ useEffect(() => {
     }
   }
 
-  
-function formatDate(value) {
-  if (!value) return 'Unknown'
+  // Change password using the existing backend endpoint.
+  async function handleChangePassword(event) {
+    event.preventDefault()
+    if (passwordChangeLoading) return
 
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Unknown'
+    setPasswordChangeError('')
+    setPasswordChangeMessage('')
 
-  return date.toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
-}
+    if (!currentPassword) {
+      setPasswordChangeError(t('passwordErrorCurrentRequired'))
+      return
+    }
+    if (newPassword.length < 8) {
+      setPasswordChangeError(t('passwordErrorMinLength'))
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordChangeError(t('passwordErrorMismatch'))
+      return
+    }
+    if (newPassword === currentPassword) {
+      setPasswordChangeError(t('passwordErrorSame'))
+      return
+    }
+    if (new TextEncoder().encode(newPassword).length > 72) {
+      setPasswordChangeError(t('passwordErrorTooLong'))
+      return
+    }
 
-async function handleChangePassword(event) {
-  event.preventDefault()
-
-  if (passwordChangeLoading) return
-
-  setPasswordChangeError('')
-  setPasswordChangeMessage('')
-
-  if (newPassword !== confirmPassword) {
-    setPasswordChangeError('New passwords do not match.')
-    return
-  }
-
-  if (newPassword.length < 8) {
-    setPasswordChangeError('Password must be at least 8 characters.')
-    return
-  }
-
-  try {
-    setPasswordChangeLoading(true)
-
-    const data = await requestJSON(
-      API_BASE + '/auth/change-password',
-      {
+    try {
+      setPasswordChangeLoading(true)
+      const data = await requestJSON(API_BASE + '/auth/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: 'Bearer ' + token,
         },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+
+      if (data.user) {
+        setUser((previousUser) => ({
+          ...previousUser,
+          ...data.user,
+          mustChangePassword: false,
+        }))
+      } else {
+        setUser((previousUser) => ({ ...previousUser, mustChangePassword: false }))
       }
-    )
 
-    setUser((previousUser) => ({
-      ...previousUser,
-      mustChangePassword: false,
-    }))
-
-    setCurrentPassword('')
-    setNewPassword('')
-    setConfirmPassword('')
-
-    setPasswordChangeMessage(
-      data.message || 'Password changed successfully!'
-    )
-
-    setActiveView('home')
-  } catch (err) {
-    setPasswordChangeError(
-      err.message || 'Could not change your password.'
-    )
-  } finally {
-    setPasswordChangeLoading(false)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setPasswordChangeMessage(t('passwordChanged'))
+    } catch (err) {
+      setPasswordChangeError(t('passwordChangeFailed'))
+    } finally {
+      setPasswordChangeLoading(false)
+    }
   }
-}
 
+  function translatePaymentStatus(status) {
+    if (status === 'Success') return t('statusSuccess')
+    if (status === 'Failed') return t('statusFailed')
+    if (status === 'Pending') return t('statusPending')
+    return status || t('unknown')
+  }
 
-  // Dedicated Forgot Password screen
+  function formatDate(value) {
+    if (!value) return t('unknown')
 
-  // Force users to change their temporary password
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return t('unknown')
+
+    return date.toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    })
+  }
+
+  // Users who received a temporary password must change it before continuing.
   if (user?.mustChangePassword === true) {
     return (
       <div style={styles.authPage}>
@@ -1032,94 +1022,36 @@ async function handleChangePassword(event) {
           <h1 className="logo" style={styles.authLogo}>
             Pulse<span>Connect</span>
           </h1>
-
-          <h2 style={{ marginBottom: 8 }}>
-            Change Your Password
-          </h2>
-
+          <h2 style={{ marginBottom: 8 }}>{t('changeTemporaryPasswordTitle')}</h2>
           <p style={styles.muted}>
-            You are using a temporary password.
-            Please create a new password to continue using PulseConnect.
+            {t('temporaryPasswordDescription')}
           </p>
-
           <form onSubmit={handleChangePassword} style={styles.authForm}>
-            <label style={styles.label} htmlFor="current-password">
-              Temporary Password
-            </label>
-
-            <input
-              id="current-password"
-              type="password"
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-              placeholder="Enter temporary password"
-              autoComplete="current-password"
-              required
-              style={styles.input}
-            />
-
-            <label style={styles.label} htmlFor="new-password">
-              New Password
-            </label>
-
-            <input
-              id="new-password"
-              type="password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              placeholder="Enter new password"
-              autoComplete="new-password"
-              minLength={8}
-              required
-              style={styles.input}
-            />
-
-            <label style={styles.label} htmlFor="confirm-password">
-              Confirm New Password
-            </label>
-
-            <input
-              id="confirm-password"
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="Confirm new password"
-              autoComplete="new-password"
-              minLength={8}
-              required
-              style={styles.input}
-            />
-
-            {passwordChangeError && (
-              <p role="alert" style={styles.error}>
-                {passwordChangeError}
-              </p>
-            )}
-
-            {passwordChangeMessage && (
-              <p role="status" style={styles.successMessage}>
-                {passwordChangeMessage}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={passwordChangeLoading}
-              style={{
-                ...styles.submitButton,
-                opacity: passwordChangeLoading ? 0.7 : 1,
-              }}
-            >
-              {passwordChangeLoading
-                ? 'Changing Password...'
-                : 'Change Password'}
+            <label style={styles.label} htmlFor="temporary-current-password">{t('temporaryPasswordLabel')}</label>
+            <input id="temporary-current-password" type="password" value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password"
+              required style={styles.input} />
+            <label style={styles.label} htmlFor="temporary-new-password">{t('newPasswordLabel')}</label>
+            <input id="temporary-new-password" type="password" value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password"
+              minLength={8} maxLength={72} required style={styles.input} />
+            <label style={styles.label} htmlFor="temporary-confirm-password">{t('confirmNewPasswordLabel')}</label>
+            <input id="temporary-confirm-password" type="password" value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password"
+              minLength={8} maxLength={72} required style={styles.input} />
+            {passwordChangeError && <p role="alert" style={styles.error}>{passwordChangeError}</p>}
+            {passwordChangeMessage && <p role="status" style={styles.successMessage}>{passwordChangeMessage}</p>}
+            <button type="submit" disabled={passwordChangeLoading} style={{ ...styles.submitButton, opacity: passwordChangeLoading ? 0.7 : 1 }}>
+              {passwordChangeLoading ? t('changingPassword') : t('saveNewPassword')}
             </button>
           </form>
+          <button type="button" onClick={logout} style={styles.backButton}>{t('logout')}</button>
         </section>
       </div>
     )
   }
 
+  // Dedicated Forgot Password screen: email OR registered mobile.
   if (!user && showForgotPassword) {
     return (
       <div style={styles.authPage}>
@@ -1128,76 +1060,126 @@ async function handleChangePassword(event) {
             Pulse<span>Connect</span>
           </h1>
 
-          <h2 style={{ marginBottom: 8 }}>Forgot Password?</h2>
-
+          <h2 style={{ marginBottom: 8 }}>{t('forgotPassword')}</h2>
           <p style={styles.muted}>
-            Enter the mobile number registered with your PulseConnect account.
-            We will verify it using an SMS OTP and send a temporary password
-            to your registered email address.
+            Choose email or mobile number registered with your PulseConnect account.
           </p>
 
-          <form onSubmit={handleForgotPassword} style={styles.authForm}>
-            <label style={styles.label} htmlFor="forgot-phone">
-              Registered mobile number
-            </label>
-
-            <input
-              id="forgot-phone"
-              type="tel"
-              value={forgotPhone}
-              onChange={(event) => {
-                setForgotPhone(event.target.value)
-                setForgotDailyLimitReached(false)
+          <div style={{ display: 'flex', gap: 10, margin: '18px 0' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setForgotMethod('email')
                 setForgotError('')
                 setForgotMessage('')
-                          }}
-              placeholder="Enter your registered mobile number"
-              autoComplete="tel"
-              maxLength={16}
-              required
-              style={styles.input}
-            />
-
-            <p style={styles.warningMessage}>
-              You can reset your password only once per day.
-              After mobile verification, the temporary password will be sent
-              to the email saved in your account.
-            </p>
-
-            {forgotError && (
-              <p role="alert" style={styles.error}>
-                {forgotError}
-              </p>
-            )}
-
-            {forgotMessage && (
-              <p role="status" style={styles.successMessage}>
-                {forgotMessage}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={forgotLoading || forgotDailyLimitReached}
+              }}
               style={{
                 ...styles.submitButton,
-                opacity: forgotLoading || forgotDailyLimitReached ? 0.55 : 1,
-                cursor: forgotLoading || forgotDailyLimitReached ? 'not-allowed' : 'pointer',
+                flex: 1,
+                background: forgotMethod === 'email' ? '#5746e8' : '#ffffff',
+                color: forgotMethod === 'email' ? '#ffffff' : '#273044',
+                border: '1px solid #d7dceb',
               }}
             >
-              {forgotLoading
-                ? 'Please wait...'
-                : forgotDailyLimitReached
-                  ? 'Daily limit reached'
-                  : 'Verify mobile number'}
+              Email
             </button>
-          </form>
+            <button
+              type="button"
+              onClick={() => {
+                setForgotMethod('phone')
+                setForgotError('')
+                setForgotMessage('')
+              }}
+              style={{
+                ...styles.submitButton,
+                flex: 1,
+                background: forgotMethod === 'phone' ? '#5746e8' : '#ffffff',
+                color: forgotMethod === 'phone' ? '#ffffff' : '#273044',
+                border: '1px solid #d7dceb',
+              }}
+            >
+              Mobile number
+            </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={backToLogin}
-            style={styles.backButton}
-          >
+          {forgotMethod === 'email' ? (
+            <form onSubmit={handleForgotPassword} style={styles.authForm}>
+              <label style={styles.label} htmlFor="forgot-email">
+                Registered email address
+              </label>
+              <input
+                id="forgot-email"
+                type="email"
+                value={forgotEmail}
+                onChange={(event) => {
+                  setForgotEmail(event.target.value)
+                  setForgotError('')
+                  setForgotMessage('')
+                }}
+                placeholder="Enter your registered email"
+                autoComplete="email"
+                maxLength={254}
+                required
+                style={styles.input}
+              />
+              <button
+                type="submit"
+                disabled={forgotLoading}
+                style={{ ...styles.submitButton, opacity: forgotLoading ? 0.7 : 1 }}
+              >
+                {forgotLoading ? 'Sending...' : 'Send temporary password'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleForgotPasswordByPhone} style={styles.authForm}>
+              <label style={styles.label} htmlFor="forgot-phone">
+                Registered mobile number
+              </label>
+              <input
+                id="forgot-phone"
+                type="tel"
+                inputMode="numeric"
+                value={forgotPhone}
+                onChange={(event) => {
+                  setForgotPhone(event.target.value)
+                  setForgotError('')
+                  setForgotMessage('')
+                }}
+                placeholder="Enter your 10-digit mobile number"
+                autoComplete="tel"
+                maxLength={14}
+                required
+                style={styles.input}
+              />
+              <p style={styles.muted}>
+                We will verify this number with an OTP using MSG91. After successful verification, the temporary password will be sent to your registered email.
+              </p>
+              <button
+                type="submit"
+                disabled={forgotLoading}
+                style={{ ...styles.submitButton, opacity: forgotLoading ? 0.7 : 1 }}
+              >
+                {forgotLoading ? 'Please wait...' : 'Verify mobile and reset password'}
+              </button>
+            </form>
+          )}
+
+          <p style={styles.warningMessage}>
+            {t('oneTimeDaily')}
+          </p>
+
+          {forgotError && (
+            <p role="alert" style={styles.error}>
+              {forgotError}
+            </p>
+          )}
+          {forgotMessage && (
+            <p role="status" style={styles.successMessage}>
+              {forgotMessage}
+            </p>
+          )}
+
+          <button type="button" onClick={backToLogin} style={styles.backButton}>
             {t('backLogin')}
           </button>
         </section>
@@ -1244,7 +1226,7 @@ async function handleChangePassword(event) {
                 )
                 setError('')
               }}
-              placeholder={t('enterSixOtp')}
+              placeholder={t('enterOtp')}
               maxLength={6}
               pattern="[0-9]{6}"
               required
@@ -1365,7 +1347,7 @@ async function handleChangePassword(event) {
                 />
 
                 <label style={styles.label} htmlFor="register-email">
-                  Email
+                  {t('email')}
                 </label>
                 <input
                   id="register-email"
@@ -1392,7 +1374,7 @@ async function handleChangePassword(event) {
                   autoComplete="tel"
                   maxLength={16}
                   pattern="\+?[1-9][0-9]{9,14}"
-                  title="Enter a valid mobile number with country code"
+                  title={t('mobileWithCode')}
                   required
                   style={styles.input}
                 />
@@ -1463,7 +1445,7 @@ async function handleChangePassword(event) {
               {authLoading
                 ? t('pleaseWait')
                 : authMode === 'login'
-                  ? t('login') + ' →'
+                  ? `${t('login')} →`
                   : t('createAccountButton')}
             </button>
           </form>
@@ -1595,14 +1577,14 @@ async function handleChangePassword(event) {
             type="button"
             onClick={logout}
             style={styles.logoutButton}
-            aria-label="Log out of PulseConnect"
+            aria-label={t('logout')}
           >
             {t('logout')}
           </button>
 
           <button
             type="button"
-            aria-label="Open profile"
+            aria-label={t('profile')}
             style={styles.avatarButton}
             onClick={openProfile}
           >
@@ -1631,25 +1613,25 @@ async function handleChangePassword(event) {
 
               <div style={styles.detailRow}>
                 <span style={styles.detailLabel}>{t('fullName')}</span>
-                <strong>{user.name || 'Not available'}</strong>
+                <strong>{user.name || t('notAvailable')}</strong>
               </div>
 
               <div style={styles.detailRow}>
                 <span style={styles.detailLabel}>{t('username')}</span>
-                <strong>@{user.username || 'Not available'}</strong>
+                <strong>@{user.username || t('notAvailable')}</strong>
               </div>
 
               <div style={styles.detailRow}>
                 <span style={styles.detailLabel}>{t('email')}</span>
                 <strong style={styles.breakText}>
-                  {user.email || 'Not available'}
+                  {user.email || t('notAvailable')}
                 </strong>
               </div>
 
               <div style={styles.detailRow}>
                 <span style={styles.detailLabel}>{t('mobile')}</span>
                 <strong style={styles.breakText}>
-                  {user.phone || 'Mobile number not added'}
+                  {user.phone || t('mobileNotAdded')}
                 </strong>
               </div>
 
@@ -1668,7 +1650,7 @@ async function handleChangePassword(event) {
               <div style={styles.detailRow}>
                 <span style={styles.detailLabel}>{t('subscription')}</span>
                 <strong style={styles.subscriptionBadge}>
-                  {user.subscription || 'Free'}
+                  {user.subscription || t('freePlan')}
                 </strong>
               </div>
 
@@ -1726,14 +1708,14 @@ async function handleChangePassword(event) {
                     >
                       <div style={styles.historyIcon}>↗</div>
                       <div style={styles.historyInfo}>
-                        <strong>{entry.browser || 'Unknown browser'}</strong>
+                        <strong>{entry.browser || t('unknownBrowser')}</strong>
                         <p style={styles.historyMeta}>
-                          {entry.operatingSystem || 'Unknown OS'}
+                          {entry.operatingSystem || t('unknownOs')}
                           {' · '}
-                          {entry.deviceCategory || 'Unknown device'}
+                          {entry.deviceCategory || t('unknownDevice')}
                         </p>
                         <p style={styles.historyMeta}>
-                          IP address: {entry.ipAddress || 'Unknown'}
+                          {t('ipAddress')} {entry.ipAddress || t('unknown')}
                         </p>
                         <p style={styles.historyDate}>
                           {formatDate(entry.loggedInAt)}
@@ -1781,7 +1763,11 @@ async function handleChangePassword(event) {
                           : '#92400e',
                   }}
                 >
-                  {paymentNotice.message}
+                  {paymentNotice.type === 'success'
+                    ? t('paymentSuccessNotice')
+                    : paymentNotice.type === 'error'
+                      ? t('paymentFailedNotice')
+                      : t('paymentPendingNotice')}
                 </div>
               )}
 
@@ -1802,7 +1788,7 @@ async function handleChangePassword(event) {
                     gap: 10,
                   }}
                 >
-                  <h4 style={{ margin: 0, fontSize: 18 }}>Free</h4>
+                  <h4 style={{ margin: 0, fontSize: 18 }}>{t('freePlan')}</h4>
 
                   {(user?.subscription || 'Free') === 'Free' && (
                     <span
@@ -1821,7 +1807,7 @@ async function handleChangePassword(event) {
                   ₹0
                 </strong>
 
-                <strong>1 tweet / month</strong>
+                <strong>{t('freeQuota')}</strong>
 
                 <p style={{ ...styles.muted, marginBottom: 0 }}>
                   {t('freePlanDescription')}
@@ -1832,6 +1818,8 @@ async function handleChangePassword(event) {
                 token={token}
                 apiBase={API_BASE}
                 currentPlan={user?.subscription || 'Free'}
+                subscriptionExpiresAt={user?.subscriptionExpiresAt}
+                language={language}
               />
 
               <p
@@ -1843,56 +1831,128 @@ async function handleChangePassword(event) {
               >
                 {t('paidTerms')}
               </p>
+
+              {/* Payment History */}
               <div style={{ marginTop: 30 }}>
-  <div style={{
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-  }}>
-    <h3>Payment History</h3>
+                <div style={styles.historyHeader}>
+                  <div>
+                    <h3 style={{ marginBottom: 5 }}>{t('paymentHistory')}</h3>
+                    <p style={styles.muted}>
+                      {t('recentPayments')}
+                    </p>
+                  </div>
 
-    <button
-      type="button"
-      onClick={fetchPaymentHistory}
-      disabled={paymentsLoading}
-    >
-      {paymentsLoading ? 'Loading...' : 'Refresh'}
-    </button>
-  </div>
+                  <button
+                    type="button"
+                    style={styles.refreshButton}
+                    disabled={paymentsLoading}
+                    onClick={fetchPaymentHistory}
+                  >
+                    {paymentsLoading ? t('loading') : t('refresh')}
+                  </button>
+                </div>
 
-  {paymentsLoading ? (
-    <p>Loading payment history...</p>
-  ) : paymentsError ? (
-    <p style={{ color: 'red' }}>{paymentsError}</p>
-  ) : payments.length === 0 ? (
-    <p>No payment records found.</p>
-  ) : (
-    payments.map((payment) => (
-      <div
-        key={payment._id || payment.txnid}
-        style={{
-          padding: 14,
-          marginTop: 10,
-          border: '1px solid #e7eaf1',
-          borderRadius: 10,
-        }}
-      >
-        <strong>{payment.plan}</strong>
-        <p>Amount: ₹{payment.amount}</p>
-        <p>Status: {payment.status}</p>
-        <p>Transaction ID: {payment.txnid}</p>
-        <small>
-          {new Date(payment.createdAt).toLocaleString()}
-        </small>
-      </div>
-    ))
-  )}
-</div>
+                {paymentsLoading ? (
+                  <p style={styles.emptyState}>{t('loadingPayments')}</p>
+                ) : paymentsError ? (
+                  <p role="alert" style={styles.error}>
+                    {paymentsError}
+                  </p>
+                ) : payments.length === 0 ? (
+                  <p style={styles.emptyState}>{t('noPayments')}</p>
+                ) : (
+                  <div style={styles.historyList}>
+                    {payments.map((payment) => {
+                      const statusColor =
+                        payment.status === 'Success'
+                          ? '#15803d'
+                          : payment.status === 'Failed'
+                            ? '#dc2626'
+                            : '#b45309'
+
+                      const statusBackground =
+                        payment.status === 'Success'
+                          ? '#dcfce7'
+                          : payment.status === 'Failed'
+                            ? '#fee2e2'
+                            : '#fef3c7'
+
+                      return (
+                        <article
+                          key={payment._id || payment.txnid}
+                          style={styles.historyItem}
+                        >
+                          <div style={styles.historyIcon}>₹</div>
+
+                          <div style={styles.historyInfo}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                gap: 10,
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              <strong>{payment.plan} {t('planSuffix')}</strong>
+                              <span
+                                style={{
+                                  padding: '5px 10px',
+                                  borderRadius: 20,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  color: statusColor,
+                                  background: statusBackground,
+                                }}
+                              >
+                                {translatePaymentStatus(payment.status)}
+                              </span>
+                            </div>
+
+                            <p style={styles.historyMeta}>
+                              {t('amount')} ₹{payment.amount}
+                            </p>
+                            <p style={styles.historyMeta}>
+                              {t('transactionId')} {payment.txnid}
+                            </p>
+                            <p style={styles.historyDate}>
+                              {formatDate(payment.paidAt || payment.createdAt)}
+                            </p>
+                          </div>
+                        </article>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </section>
         ) : activeView === 'settings' ? (
           <section style={styles.profileSection}>
+            <div style={styles.detailsCard}>
+              <h3>{t('changePasswordTitle')}</h3>
+              <p style={styles.muted}>{t('changePasswordDescription')}</p>
+              <form onSubmit={handleChangePassword} style={styles.authForm}>
+                <label style={styles.label} htmlFor="settings-current-password">{t('currentPasswordLabel')}</label>
+                <input id="settings-current-password" type="password" value={currentPassword}
+                  onChange={(event) => { setCurrentPassword(event.target.value); setPasswordChangeError(''); setPasswordChangeMessage('') }}
+                  autoComplete="current-password" required style={styles.input} />
+                <label style={styles.label} htmlFor="settings-new-password">{t('newPasswordLabel')}</label>
+                <input id="settings-new-password" type="password" value={newPassword}
+                  onChange={(event) => { setNewPassword(event.target.value); setPasswordChangeError(''); setPasswordChangeMessage('') }}
+                  autoComplete="new-password" minLength={8} maxLength={72} required style={styles.input} />
+                <label style={styles.label} htmlFor="settings-confirm-password">{t('confirmNewPasswordLabel')}</label>
+                <input id="settings-confirm-password" type="password" value={confirmPassword}
+                  onChange={(event) => { setConfirmPassword(event.target.value); setPasswordChangeError(''); setPasswordChangeMessage('') }}
+                  autoComplete="new-password" minLength={8} maxLength={72} required style={styles.input} />
+                {passwordChangeError && <p role="alert" style={styles.error}>{passwordChangeError}</p>}
+                {passwordChangeMessage && <p role="status" style={styles.successMessage}>{passwordChangeMessage}</p>}
+                <button type="submit" disabled={passwordChangeLoading} style={{ ...styles.submitButton, opacity: passwordChangeLoading ? 0.7 : 1 }}>
+                  {passwordChangeLoading ? t('changingPassword') : t('updatePassword')}
+                </button>
+              </form>
+            </div>
+
             <div style={styles.detailsCard}>
               <h3>{t('accountSettings')}</h3>
               <p style={styles.muted}>
@@ -1904,7 +1964,7 @@ async function handleChangePassword(event) {
                   {t('currentEmail')}
                 </span>
                 <p style={{ ...styles.breakText, fontWeight: 600 }}>
-                  {user.email || 'Not available'}
+                  {user.email || t('notAvailable')}
                 </p>
               </div>
 
@@ -1947,8 +2007,8 @@ async function handleChangePassword(event) {
                       }}
                     >
                       {emailChangeLoading
-                        ? 'Sending OTP...'
-                        : 'Send verification OTP'}
+                        ? t('sendingOtp')
+                        : t('sendOtp')}
                     </button>
                   </>
                 ) : (
@@ -1974,7 +2034,7 @@ async function handleChangePassword(event) {
                         )
                         setEmailChangeError('')
                       }}
-                      placeholder={t('enterSixOtp')}
+                      placeholder={t('enterOtp')}
                       maxLength={6}
                       pattern="[0-9]{6}"
                       required
@@ -1995,8 +2055,8 @@ async function handleChangePassword(event) {
                       }}
                     >
                       {emailChangeLoading
-                        ? 'Verifying...'
-                        : 'Verify OTP and update email'}
+                        ? t('verifying')
+                        : t('verifyUpdateEmail')}
                     </button>
 
                     <button
@@ -2039,61 +2099,65 @@ async function handleChangePassword(event) {
 
          
 
-            
-{/* Browser notification preferences */}
-<div style={styles.detailsCard}>
-  <h3>{t('browserNotifications')}</h3>
+            {/* Browser notification preferences */}
+            <div style={styles.detailsCard}>
+              <h3>{t('browserNotifications')}</h3>
+              <p style={styles.muted}>
+                {t('browserNotificationsText')}
+              </p>
 
-  <p style={styles.muted}>
-    {t('browserNotificationsText')}
-  </p>
+              <p style={{ marginTop: 16 }}>
+                {t('status')}{' '}
+                <strong>
+                  {notificationsEnabled ? t('enabled') : t('disabled')}
+                </strong>
+              </p>
 
-  <p style={{ marginTop: 16 }}>
-    {t('status')}{' '}
-    <strong>
-      {notificationsEnabled ? t('enabled') : t('disabled')}
-    </strong>
-  </p>
+              {!notificationsEnabled ? (
+                <button
+                  type="button"
+                  style={styles.submitButton}
+                  onClick={enableNotifications}
+                >
+                  {t('enableNotifications')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  style={styles.refreshButton}
+                  onClick={disableNotifications}
+                >
+                  {t('disableNotifications')}
+                </button>
+              )}
 
-  {!notificationsEnabled ? (
-    <button
-      type="button"
-      style={styles.submitButton}
-      onClick={enableNotifications}
-    >
-      {t('enableNotifications')}
-    </button>
-  ) : (
-    <button
-      type="button"
-      style={styles.refreshButton}
-      onClick={disableNotifications}
-    >
-      {t('disableNotifications')}
-    </button>
-  )}
-
-  {typeof Notification !== 'undefined' &&
-    Notification.permission === 'denied' && (
-      <p style={styles.error}>
-        {t('notificationsBlocked')}
-      </p>
-    )}
-</div>
+              {typeof Notification !== 'undefined' &&
+                Notification.permission === 'denied' && (
+                  <p style={styles.error}>
+                    {t('notificationsBlocked')}
+                  </p>
+                )}
+                </div>
 
             <LanguageSettings
               token={token}
               apiBase={API_BASE}
-              onLanguageChange={(newLanguage) => setLanguage(newLanguage)}
+              onLanguageChange={handleLanguageChange}
             />
-          </section>
+
+</section>
+            
         ) : (
           <>
             <div style={styles.welcome}>
               {t('loggedInAs')} <strong>{user.name}</strong> (@{user.username})
             </div>
 
-            <AudioTweets token={token} apiBase={API_BASE} />
+            <AudioTweets
+  token={token}
+  apiBase={API_BASE}
+  language={language}
+/>
 
             <form className="composer" onSubmit={createPost}>
               <div className="avatar">{initial}</div>

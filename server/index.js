@@ -7,6 +7,20 @@ const crypto = require('crypto')
 const nodemailer = require('nodemailer')
 require('dotenv').config()
 
+// TESTING ONLY: Daily forgot-password limit can be disabled in local development.
+// This setting is always ignored in production.
+const DISABLE_FORGOT_PASSWORD_DAILY_LIMIT_FOR_TESTING =
+  process.env.NODE_ENV !== 'production' &&
+  process.env.DISABLE_FORGOT_PASSWORD_DAILY_LIMIT_FOR_TESTING === 'true'
+  console.log('========== FORGOT PASSWORD CONFIG ==========')
+console.log('NODE_ENV:', process.env.NODE_ENV)
+console.log(
+  'DAILY LIMIT DISABLED:',
+  DISABLE_FORGOT_PASSWORD_DAILY_LIMIT_FOR_TESTING
+)
+console.log('MongoDB database:', mongoose.connection.name)
+console.log('============================================')
+
 const Post = require('./models/Post')
 const User = require('./models/User')
 const LoginHistory = require('./models/LoginHistory')
@@ -15,6 +29,7 @@ const LoginOTP = require('./models/LoginOTP')
 const MonthlyPostUsage = require('./models/MonthlyPostUsage')
 
 const app = express()
+app.set('trust proxy', 1)
 const PORT = process.env.PORT || 5000
 
 app.use(cors())
@@ -70,6 +85,7 @@ function getDeviceCategory(userAgent = '') {
   return 'Unknown'
 }
 
+
 function isMobileLoginAllowed(date = new Date()) {
   const istTime = new Intl.DateTimeFormat('en-IN', {
     timeZone: 'Asia/Kolkata',
@@ -79,8 +95,10 @@ function isMobileLoginAllowed(date = new Date()) {
   }).formatToParts(date)
 
   const hour = Number(istTime.find((part) => part.type === 'hour').value)
+
   return hour >= 10 && hour < 13
 }
+
 
 async function recordLogin(req, userId) {
   const userAgent = req.get('user-agent') || ''
@@ -1196,16 +1214,28 @@ app.post(
 
       const now = new Date()
       const istDayStart = getISTDayStart(now)
+      console.log('========== FORGOT PASSWORD DEBUG ==========')
+console.log('Database:', mongoose.connection.name)
+console.log('User ID:', String(user._id))
+console.log('Previous reset time:', user.passwordResetRequestedAt)
+console.log('Current time:', now)
+console.log('IST day start:', istDayStart)
+console.log('Daily limit bypass:', DISABLE_FORGOT_PASSWORD_DAILY_LIMIT_FOR_TESTING)
+console.log('============================================')
 
       // Reserve the one-reset-per-day limit atomically.
       const reservedUser = await User.findOneAndUpdate(
         {
           _id: userId,
-          $or: [
-            { passwordResetRequestedAt: null },
-            { passwordResetRequestedAt: { $exists: false } },
-            { passwordResetRequestedAt: { $lt: istDayStart } },
-          ],
+          ...(DISABLE_FORGOT_PASSWORD_DAILY_LIMIT_FOR_TESTING
+            ? {}
+            : {
+                $or: [
+                  { passwordResetRequestedAt: null },
+                  { passwordResetRequestedAt: { $exists: false } },
+                  { passwordResetRequestedAt: { $lt: istDayStart } },
+                ],
+              }),
         },
         { $set: { passwordResetRequestedAt: now } },
         { new: true }
@@ -1394,6 +1424,7 @@ app.post(
       const istDayStart = getISTDayStart(new Date())
 
       if (
+        !DISABLE_FORGOT_PASSWORD_DAILY_LIMIT_FOR_TESTING &&
         user.passwordResetRequestedAt &&
         user.passwordResetRequestedAt >= istDayStart
       ) {
@@ -1499,17 +1530,22 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const reservedUser = await User.findOneAndUpdate(
       {
         _id: userId,
-        $or: [
-          { passwordResetRequestedAt: null },
-          { passwordResetRequestedAt: { $exists: false } },
-          { passwordResetRequestedAt: { $lt: istDayStart } },
-        ],
+        ...(DISABLE_FORGOT_PASSWORD_DAILY_LIMIT_FOR_TESTING
+          ? {}
+          : {
+              $or: [
+                { passwordResetRequestedAt: null },
+                { passwordResetRequestedAt: { $exists: false } },
+                { passwordResetRequestedAt: { $lt: istDayStart } },
+              ],
+            }),
       },
       { $set: { passwordResetRequestedAt: now } },
       { new: true }
     )
 
     if (!reservedUser) {
+      console.log('Daily limit check passed:', Boolean(reservedUser))
       return res.status(429).json({
         success: false,
         message: 'You can use this option only one time per day.',
@@ -1968,3 +2004,4 @@ async function startServer() {
 }
 
 startServer()
+

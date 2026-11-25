@@ -48,19 +48,9 @@ function isValidHash(receivedHash, calculatedHash) {
 }
 
 
-// Payment time rule:
-// - Local development + PayU test mode: allow testing at any time.
-// - Production or live PayU mode: allow payments only from 10:00 to 10:59 AM IST.
+// Payment time restriction: 10:00 AM to 10:59 AM IST in every environment.
+
 function isPaymentTimeAllowed(date = new Date()) {
-  const payUBaseUrl = String(process.env.PAYU_BASE_URL || '')
-  const isLocalPayUTestMode =
-    process.env.NODE_ENV !== 'production' &&
-    payUBaseUrl.includes('test.payu.in')
-
-  if (isLocalPayUTestMode) {
-    return true
-  }
-
   const parts = new Intl.DateTimeFormat('en-IN', {
     timeZone: 'Asia/Kolkata',
     hour: '2-digit',
@@ -68,11 +58,14 @@ function isPaymentTimeAllowed(date = new Date()) {
     hourCycle: 'h23',
   }).formatToParts(date)
 
-  const hour = Number(parts.find((part) => part.type === 'hour').value)
+  const hour = Number(
+    parts.find((part) => part.type === 'hour').value
+  )
 
-  // 10:00 AM inclusive, 11:00 AM exclusive.
+  // Allow payments from 10:00 AM until 10:59 AM IST.
   return hour === 10
 }
+
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization
@@ -490,15 +483,9 @@ router.post('/callback', async (req, res) => {
 
       const paidAt = new Date()
 
-      const currentExpiry =
-        currentUser.subscriptionExpiresAt &&
-        currentUser.subscriptionExpiresAt > paidAt
-          ? currentUser.subscriptionExpiresAt
-          : paidAt
-
       currentUser.subscription = claimedPayment.plan
       currentUser.subscriptionExpiresAt = new Date(
-        currentExpiry.getTime() +
+        paidAt.getTime() +
         SUBSCRIPTION_DAYS * 24 * 60 * 60 * 1000
       )
 
@@ -596,11 +583,6 @@ router.post('/mock-success', authenticateToken, async (req, res) => {
     }
 
     const paidAt = new Date()
-    const currentExpiry =
-      user.subscriptionExpiresAt && user.subscriptionExpiresAt > paidAt
-        ? user.subscriptionExpiresAt
-        : paidAt
-
     const txnid = `MOCK${Date.now()}${crypto.randomBytes(4).toString('hex')}`
 
     const payment = await Payment.create({
@@ -614,7 +596,8 @@ router.post('/mock-success', authenticateToken, async (req, res) => {
 
     user.subscription = plan
     user.subscriptionExpiresAt = new Date(
-      currentExpiry.getTime() + SUBSCRIPTION_DAYS * 24 * 60 * 60 * 1000
+      paidAt.getTime() +
+      SUBSCRIPTION_DAYS * 24 * 60 * 60 * 1000
     )
 
     await user.save()

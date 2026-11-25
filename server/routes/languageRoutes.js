@@ -151,8 +151,8 @@ router.get('/current', authenticateToken, async (req, res) => {
 })
 
 // ==========================================
-// REQUEST MOBILE OTP
-// ALL SIX LANGUAGES USE MSG91
+// REQUEST LANGUAGE VERIFICATION OTP
+// French uses email; the other five languages use MSG91 SMS.
 // ==========================================
 
 router.post('/request-otp', authenticateToken, async (req, res) => {
@@ -164,14 +164,6 @@ router.post('/request-otp', authenticateToken, async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Please select a supported language',
-      })
-    }
-
-    // Check MSG91 configuration
-    if (!process.env.MSG91_AUTH_KEY) {
-      return res.status(503).json({
-        success: false,
-        message: 'MSG91 service is not configured on the server',
       })
     }
 
@@ -190,6 +182,89 @@ router.post('/request-otp', authenticateToken, async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'This language is already selected',
+      })
+    }
+
+    // French must use an OTP sent to the registered email address.
+    if (language === 'French') {
+      if (
+        !user.email ||
+        !process.env.EMAIL_USER ||
+        !process.env.EMAIL_PASS
+      ) {
+        return res.status(503).json({
+          success: false,
+          message: 'Email service is not configured',
+        })
+      }
+
+      // Apply a 60-second cooldown to email OTP requests as well.
+      const recentRequest = await LanguageOTP.findOne({
+        user: user._id,
+        createdAt: { $gt: new Date(Date.now() - OTP_COOLDOWN_MS) },
+      })
+
+      if (recentRequest) {
+        return res.status(429).json({
+          success: false,
+          message: 'Please wait 60 seconds before requesting another OTP',
+        })
+      }
+
+      // Remove any previous pending language OTP for this user.
+      await LanguageOTP.deleteMany({ user: user._id })
+
+      const otp = crypto.randomInt(100000, 1000000).toString()
+
+      await LanguageOTP.create({
+        user: user._id,
+        language: 'French',
+        channel: 'email',
+        otpHash: hashOTP(otp),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        attempts: 0,
+      })
+
+      try {
+        await emailTransporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: user.email,
+          subject: 'PulseConnect language change verification',
+          text: [
+            'You requested to change your PulseConnect language to French.',
+            '',
+            `Your verification code is: ${otp}`,
+            '',
+            'This code expires in 10 minutes.',
+            'You have a maximum of 5 attempts.',
+            'If you did not request this change, ignore this email.',
+          ].join('\n'),
+        })
+      } catch (mailError) {
+        await LanguageOTP.deleteMany({ user: user._id })
+
+        console.error('Language OTP email error:', mailError.message)
+
+        return res.status(502).json({
+          success: false,
+          message: 'Could not send the verification email. Please try again later.',
+        })
+      }
+
+      return res.json({
+        success: true,
+        message: 'Verification OTP sent to your registered email address',
+        language: 'French',
+        channel: 'email',
+        expiresInSeconds: 600,
+      })
+    }
+
+    // English, Spanish, Hindi, Portuguese and Chinese use MSG91 mobile OTP.
+    if (!process.env.MSG91_AUTH_KEY) {
+      return res.status(503).json({
+        success: false,
+        message: 'MSG91 service is not configured on the server',
       })
     }
 
@@ -235,7 +310,7 @@ router.post('/request-otp', authenticateToken, async (req, res) => {
     // Save request time
     otpRequestCooldown.set(cooldownKey, now)
 
-    // Frontend opens MSG91 widget for every language
+    // Frontend opens the MSG91 widget for these five languages.
     return res.json({
       success: true,
       message: 'Continue with MSG91 mobile verification',
@@ -255,7 +330,7 @@ router.post('/request-otp', authenticateToken, async (req, res) => {
 
 // ==========================================
 // VERIFY MSG91 MOBILE TOKEN
-// ALL SIX LANGUAGES ACCEPTED
+// French is verified separately by email
 // ==========================================
 
 router.post(
@@ -276,8 +351,8 @@ router.post(
         })
       }
 
-      // Allow all six languages
-      if (!LANGUAGES.includes(language)) {
+      // French must use email OTP, not the MSG91 mobile route.
+      if (language === 'French' || !LANGUAGES.includes(language)) {
         return res.status(400).json({
           success: false,
           message: 'Unsupported mobile verification language',
@@ -401,11 +476,8 @@ router.post(
 )
 
 // ==========================================
-// LEGACY FRENCH EMAIL OTP VERIFICATION
-// RETAINED FOR BACKWARD COMPATIBILITY
-//
-// Normal language changes must use MSG91.
-// The frontend should not call this route.
+// FRENCH EMAIL OTP VERIFICATION
+// French language changes are verified through the registered email.
 // ==========================================
 
 router.post('/verify-otp', authenticateToken, async (req, res) => {
