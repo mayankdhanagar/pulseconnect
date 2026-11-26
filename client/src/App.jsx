@@ -1507,10 +1507,10 @@ useEffect(() => {
 
           <button
             type="button"
-            className="nav-button"
+            className={activeView === 'notifications' ? 'active' : ''}
             style={styles.navButton}
             onClick={() => {
-              setActiveView('home')
+              setActiveView('notifications')
               setError('')
             }}
           >
@@ -1563,7 +1563,9 @@ useEffect(() => {
                     ? t('plans')
                     : activeView === 'explore'
                       ? t('explore')
-                      : t('homeFeed')}
+                      : activeView === 'notifications'
+                        ? t('notifications')
+                        : t('homeFeed')}
             </h2>
             <p>
               {activeView === 'profile'
@@ -1574,7 +1576,9 @@ useEffect(() => {
                     ? t('plansSubtitle')
                     : activeView === 'explore'
                       ? 'Discover public posts from the PulseConnect community.'
-                      : t('homeSubtitle')}
+                      : activeView === 'notifications'
+                        ? 'Manage your PulseConnect browser notification preferences.'
+                        : t('homeSubtitle')}
             </p>
           </div>
 
@@ -1730,6 +1734,43 @@ useEffect(() => {
                   ))}
                 </div>
               )}
+            </div>
+          </section>
+        ) : activeView === 'notifications' ? (
+          <section style={styles.profileSection}>
+            <div style={styles.detailsCard}>
+              <h3 style={{ marginTop: 0 }}>{t('browserNotifications')}</h3>
+              <p style={styles.muted}>{t('browserNotificationsText')}</p>
+
+              <p style={{ marginTop: 16 }}>
+                {t('status')}{' '}
+                <strong>
+                  {notificationsEnabled ? t('enabled') : t('disabled')}
+                </strong>
+              </p>
+
+              {!notificationsEnabled ? (
+                <button
+                  type="button"
+                  style={styles.submitButton}
+                  onClick={enableNotifications}
+                >
+                  {t('enableNotifications')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  style={styles.refreshButton}
+                  onClick={disableNotifications}
+                >
+                  {t('disableNotifications')}
+                </button>
+              )}
+
+              {typeof Notification !== 'undefined' &&
+                Notification.permission === 'denied' && (
+                  <p style={styles.error}>{t('notificationsBlocked')}</p>
+                )}
             </div>
           </section>
         ) : activeView === 'explore' ? (
