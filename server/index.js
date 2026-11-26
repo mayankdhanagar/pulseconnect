@@ -18,7 +18,6 @@ console.log(
   'DAILY LIMIT DISABLED:',
   DISABLE_FORGOT_PASSWORD_DAILY_LIMIT_FOR_TESTING
 )
-console.log('MongoDB database:', mongoose.connection.name)
 console.log('============================================')
 
 const Post = require('./models/Post')
@@ -28,12 +27,24 @@ const EmailChangeOTP = require('./models/EmailChangeOTP')
 const LoginOTP = require('./models/LoginOTP')
 const MonthlyPostUsage = require('./models/MonthlyPostUsage')
 
+// Create the Express app once.
 const app = express()
+
+// CORS: allow the deployed frontend and local Vite development server.
+const allowedOrigins = [
+  'https://pulseconnect-murex.vercel.app',
+  'http://localhost:5173'
+]
+
+app.use(cors({
+  origin: allowedOrigins
+}))
+
 app.set('trust proxy', 1)
 const PORT = process.env.PORT || 5000
 
 
-app.use(cors())
+
 app.use(express.json({ limit: '1mb' }))
 app.use(express.urlencoded({ extended: false }))
 
@@ -248,11 +259,14 @@ function normalizeForgotPasswordPhone(phone) {
 })
 
 app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'PulseConnect backend is healthy',
-    database:
-      mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+  const databaseConnected = mongoose.connection.readyState === 1
+
+  return res.status(databaseConnected ? 200 : 503).json({
+    success: databaseConnected,
+    message: databaseConnected
+      ? 'PulseConnect backend is healthy'
+      : 'PulseConnect backend is running, but the database is unavailable',
+    database: databaseConnected ? 'connected' : 'disconnected',
   })
 })
 
@@ -1980,30 +1994,40 @@ app.post(
 // Start Backend Server
 // ==========================================
 
-async function startServer() {
-  try {
-    if (!process.env.MONGODB_URI) {
-      throw new Error('MONGODB_URI is missing from server/.env')
+async function connectMongoDB() {
+  while (mongoose.connection.readyState !== 1) {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI, {
+        retryWrites: false,
+        serverSelectionTimeoutMS: 10000,
+        connectTimeoutMS: 10000,
+      })
+
+      console.log('MongoDB connected successfully')
+      console.log('MongoDB database:', mongoose.connection.name)
+    } catch (error) {
+      console.error('MongoDB connection failed:', error.message)
+      console.log('Retrying MongoDB connection in 5 seconds...')
+      await new Promise((resolve) => setTimeout(resolve, 5000))
     }
-
-    if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-      throw new Error('JWT_SECRET must be at least 32 characters')
-    }
-
-    await mongoose.connect(process.env.MONGODB_URI, {
-      retryWrites: false,
-    })
-
-    console.log('MongoDB connected successfully')
-
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`PulseConnect server running at http://localhost:${PORT}`)
-    })
-  } catch (error) {
-    console.error('Server startup failed:', error.message)
-    process.exit(1)
   }
 }
 
-startServer()
+function startServer() {
+  if (!process.env.MONGODB_URI) {
+    console.error('Server startup failed: MONGODB_URI is missing')
+    process.exit(1)
+  }
 
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    console.error('Server startup failed: JWT_SECRET must be at least 32 characters')
+    process.exit(1)
+  }
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`PulseConnect server running on port ${PORT}`)
+    connectMongoDB()
+  })
+}
+
+startServer()
