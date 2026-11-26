@@ -40,6 +40,7 @@ function t(key) {
   const [loginHistory, setLoginHistory] = useState([])
   const [profileLoading, setProfileLoading] = useState(false)
   const [activeView, setActiveView] = useState('home')
+  const [exploreQuery, setExploreQuery] = useState('')
   const [paymentNotice, setPaymentNotice] = useState(null)
   const [payments, setPayments] = useState([])
   const [paymentsLoading, setPaymentsLoading] = useState(false)
@@ -1494,10 +1495,10 @@ useEffect(() => {
 
           <button
             type="button"
-            className="nav-button"
+            className={activeView === 'explore' ? 'active' : ''}
             style={styles.navButton}
             onClick={() => {
-              setActiveView('home')
+              setActiveView('explore')
               setError('')
             }}
           >
@@ -1560,7 +1561,9 @@ useEffect(() => {
                   ? t('settings')
                   : activeView === 'plans'
                     ? t('plans')
-                    : t('homeFeed')}
+                    : activeView === 'explore'
+                      ? t('explore')
+                      : t('homeFeed')}
             </h2>
             <p>
               {activeView === 'profile'
@@ -1569,7 +1572,9 @@ useEffect(() => {
                   ? t('settingsSubtitle')
                   : activeView === 'plans'
                     ? t('plansSubtitle')
-                    : t('homeSubtitle')}
+                    : activeView === 'explore'
+                      ? 'Discover public posts from the PulseConnect community.'
+                      : t('homeSubtitle')}
             </p>
           </div>
 
@@ -1726,6 +1731,80 @@ useEffect(() => {
                 </div>
               )}
             </div>
+          </section>
+        ) : activeView === 'explore' ? (
+          <section style={styles.profileSection}>
+            <div style={styles.detailsCard}>
+              <h3 style={{ marginTop: 0 }}>Explore PulseConnect</h3>
+              <p style={styles.muted}>
+                Search public posts by message, author name, or username.
+              </p>
+              <input
+                type="search"
+                value={exploreQuery}
+                onChange={(event) => setExploreQuery(event.target.value)}
+                placeholder="Search posts or people..."
+                aria-label="Search public posts"
+                style={styles.input}
+              />
+            </div>
+
+            <div className="feed-heading">
+              <h3>Public posts</h3>
+              <span>
+                {posts.filter((item) => {
+                  const query = exploreQuery.trim().toLowerCase()
+                  if (!query) return true
+                  return [item.content, item.author, item.username].some((value) =>
+                    String(value || '').toLowerCase().includes(query)
+                  )
+                }).length} results
+              </span>
+            </div>
+
+            {loading ? (
+              <p style={{ padding: 24 }}>{t('loadingPosts')}</p>
+            ) : posts.filter((item) => {
+                const query = exploreQuery.trim().toLowerCase()
+                if (!query) return true
+                return [item.content, item.author, item.username].some((value) =>
+                  String(value || '').toLowerCase().includes(query)
+                )
+              }).length === 0 ? (
+              <p style={{ padding: 24 }}>
+                {exploreQuery.trim()
+                  ? 'No posts match your search. Try another keyword.'
+                  : 'No public posts are available yet.'}
+              </p>
+            ) : (
+              posts
+                .filter((item) => {
+                  const query = exploreQuery.trim().toLowerCase()
+                  if (!query) return true
+                  return [item.content, item.author, item.username].some((value) =>
+                    String(value || '').toLowerCase().includes(query)
+                  )
+                })
+                .map((item) => (
+                  <article className="post-card" key={item._id}>
+                    <div className="avatar">
+                      {item.author?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    <div className="post-content">
+                      <div className="post-author">
+                        <strong>{item.author}</strong>
+                        <span>@{item.username}</span>
+                      </div>
+                      <p>{item.content}</p>
+                      <div className="post-actions">
+                        <span>♡ {item.likes} {t('likes')}</span>
+                        <span>◯ {t('reply')}</span>
+                        <span>↗ {t('share')}</span>
+                      </div>
+                    </div>
+                  </article>
+                ))
+            )}
           </section>
         ) : activeView === 'plans' ? (
           <section style={styles.profileSection}>
