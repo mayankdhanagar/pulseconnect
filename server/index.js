@@ -4,7 +4,6 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
-const nodemailer = require('nodemailer')
 require('dotenv').config()
 
 // TESTING ONLY: Daily forgot-password limit can be disabled in local development.
@@ -52,13 +51,34 @@ app.use('/api/audio', require('./routes/audioRoutes'))
 app.use('/api/payments', require('./routes/paymentRoutes'))
 app.use('/api/language', require('./routes/languageRoutes'))
 
-const emailTransporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-})
+// Send emails through Resend's HTTPS API (no SMTP connection required).
+async function sendEmail({ to, subject, text }) {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not configured')
+  }
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.RESEND_FROM_EMAIL || 'PulseConnect <onboarding@resend.dev>',
+      to: [to],
+      subject,
+      text,
+    }),
+  })
+
+  const result = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    const detail = result.message || result.name || `HTTP ${response.status}`
+    throw new Error(`Resend email failed: ${detail}`)
+  }
+
+  return result
+}
 
 function hashEmailOTP(otp) {
   return crypto.createHash('sha256').update(otp).digest('hex')
@@ -635,7 +655,7 @@ app.post('/api/auth/login', async (req, res) => {
     const browser = getBrowser(userAgent)
 
     if (browser === 'Google Chrome') {
-      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      if (!process.env.RESEND_API_KEY) {
         return res.status(503).json({
           success: false,
           message: 'Email service is not configured',
@@ -666,8 +686,7 @@ app.post('/api/auth/login', async (req, res) => {
       })
 
       try {
-        await emailTransporter.sendMail({
-          from: process.env.EMAIL_USER,
+        await sendEmail({
           to: user.email,
           subject: 'PulseConnect login verification',
           text: [
@@ -1207,7 +1226,7 @@ app.post(
         })
       }
 
-      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      if (!process.env.RESEND_API_KEY) {
         return res.status(503).json({
           success: false,
           message: 'Email service is not configured.',
@@ -1288,8 +1307,7 @@ console.log('============================================')
       }
 
       try {
-        await emailTransporter.sendMail({
-          from: process.env.EMAIL_USER,
+        await sendEmail({
           to: user.email,
           subject: 'Your PulseConnect temporary password',
           text: [
@@ -1514,7 +1532,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       })
     }
 
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    if (!process.env.RESEND_API_KEY) {
       return res.status(503).json({
         success: false,
         message: 'Email service is not configured',
@@ -1593,11 +1611,10 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     }
 
     try {
-      await emailTransporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: user.email,
-        subject: 'Your PulseConnect temporary password',
-        text: [
+      await sendEmail({
+          to: user.email,
+          subject: 'Your PulseConnect temporary password',
+          text: [
           `Hello ${user.name},`,
           '',
           'Your PulseConnect password reset request was successful.',
@@ -1606,7 +1623,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
           'Please log in and change this temporary password as soon as possible.',
           'If you did not request this reset, contact PulseConnect support.',
         ].join('\n'),
-      })
+        })
     } catch (mailError) {
       const rollbackUpdate = {
         $set: {
@@ -1719,7 +1736,7 @@ app.post(
         })
       }
 
-      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      if (!process.env.RESEND_API_KEY) {
         return res.status(503).json({
           success: false,
           message: 'Email service is not configured',
@@ -1783,8 +1800,7 @@ app.post(
       })
 
       try {
-        await emailTransporter.sendMail({
-          from: process.env.EMAIL_USER,
+        await sendEmail({
           to: cleanEmail,
           subject: 'PulseConnect email change verification',
           text: [
